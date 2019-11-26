@@ -61,7 +61,7 @@ void ksw_extz2_sse(void *km, int qlen, const uint8_t *query, int tlen, const uin
 	qe2_    = _mm_set1_epi8((q + e) * 2);
 	flag1_  = _mm_set1_epi8(1);
 	flag2_  = _mm_set1_epi8(2);
-	flag8_  = _mm_set1_epi8(0x08);
+	flag8_  = _mm_set1_epi8(0x08); // 清除
 	flag16_ = _mm_set1_epi8(0x10);
 	sc_mch_ = _mm_set1_epi8(mat[0]);
 	sc_mis_ = _mm_set1_epi8(mat[1]);

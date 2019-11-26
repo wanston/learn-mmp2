@@ -94,6 +94,13 @@ typedef struct ktp_t {
 	pthread_cond_t cv;
 } ktp_t;
 
+/**
+ * 该函数循环执行ktp_worker_t *data->func函数，func函数的参数中有int参数，表示func函数的所执行的step。
+ * 每次执行该函数时，step的值循环增长。并且多个该函数并行执行时，func函数的执行是有限制的，因为不同线程的
+ * step之间需要同步，保证不会出现index较小的线程在执行和 小于等于其他index较大的线程的step。
+ *
+ * @param data		被解析为 ktp_worker_t 结构体指针
+ * */
 static void *ktp_worker(void *data)
 {
 	ktp_worker_t *w = (ktp_worker_t*)data;
@@ -115,18 +122,27 @@ static void *ktp_worker(void *data)
 		pthread_mutex_unlock(&p->mutex);
 
 		// working on w->step
-		w->data = p->func(p->shared, w->step, w->step? w->data : 0); // for the first step, input is NULL
+		w->data = p->func(p->shared, w->step, w->step? w->data : 0); // for the first step, input is NULL // 第一步执行前, w->data就是NULL；执行完后w->data才有内容。
 
 		// update step and let other workers know
 		pthread_mutex_lock(&p->mutex);
-		w->step = w->step == p->n_steps - 1 || w->data? (w->step + 1) % p->n_steps : p->n_steps;
-		if (w->step == 0) w->index = p->index++;
+		w->step = w->step == p->n_steps - 1 || w->data? (w->step + 1) % p->n_steps : p->n_steps; // 到了最后一步，或者有数据 都会正常更新step；如果没到最后一步就没了数据，就step更新到n_steps。
+		if (w->step == 0) w->index = p->index++; // 更新完step之后，如果某线程的step为0，那么就要更新该线程的index。
 		pthread_cond_broadcast(&p->cv);
 		pthread_mutex_unlock(&p->mutex);
 	}
 	pthread_exit(0);
 }
 
+/**
+ * 开n个线程，每个线程执行ktp_worker函数，ktp_worker函数则循环执行func函数。
+ * func函数被执行的时候会有一定的同步。
+ *
+ * @param n_threads 	线程数
+ * @param func			存放于aux->func中，在ktp_worker函数中会执行，ktp_worker的参数是ktp_worker_t结构体，该结构体的pl字段指向aux。
+ * @param shared_data 	存放于aux->shared
+ * @param n_steps		存放于aux->n_steps
+ * */
 void kt_pipeline(int n_threads, void *(*func)(void*, int, void*), void *shared_data, int n_steps)
 {
 	ktp_t aux;

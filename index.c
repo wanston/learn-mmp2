@@ -241,17 +241,17 @@ static void mm_idx_post(mm_idx_t *mi, int n_threads)
 #include "bseq.h"
 
 typedef struct {
-	int mini_batch_size;
-	uint64_t batch_size, sum_len;
-	mm_bseq_file_t *fp;
-	mm_idx_t *mi;
+	int mini_batch_size; // 一批处理的大小
+	uint64_t batch_size, sum_len; // sum_len是文件中所有序列的总长度（bp）
+	mm_bseq_file_t *fp; // 要处理的文件
+	mm_idx_t *mi; // 表示索引
 } pipeline_t;
 
 typedef struct {
-    int n_seq;
-	mm_bseq1_t *seq;
+    int n_seq; // 数组的大小
+	mm_bseq1_t *seq; // 动态数组，每个元素表示一条序列（目前已知的是fasta的序列）
 	mm128_v a;
-} step_t;
+} step_t; // 用于存储每一step中处理的序列，也就是一个batch的序列
 
 static void mm_idx_add(mm_idx_t *mi, int n, const mm128_t *a)
 {
@@ -270,13 +270,13 @@ static void *worker_pipeline(void *shared, int step, void *in)
         step_t *s;
 		if (p->sum_len > p->batch_size) return 0;
         s = (step_t*)calloc(1, sizeof(step_t));
-		s->seq = mm_bseq_read(p->fp, p->mini_batch_size, 0, &s->n_seq); // read a mini-batch
+		s->seq = mm_bseq_read(p->fp, p->mini_batch_size, 0, &s->n_seq); // read a mini-batch // 一个batch多少read会存在s->n_se	q中。
 		if (s->seq) {
 			uint32_t old_m, m;
 			assert((uint64_t)p->mi->n_seq + s->n_seq <= UINT32_MAX); // to prevent integer overflow
 			// make room for p->mi->seq
 			old_m = p->mi->n_seq, m = p->mi->n_seq + s->n_seq;
-			kroundup32(m); kroundup32(old_m);
+			kroundup32(m); kroundup32(old_m); // kroundup32宏的作用是，把输入的m，向上二进制取整，例如，0101的数取整后就是1000；但是如果是2^31+1，那么取整后的结果是2^32，就overflow了。
 			if (old_m != m)
 				p->mi->seq = (mm_idx_seq_t*)krealloc(p->mi->km, p->mi->seq, m * sizeof(mm_idx_seq_t));
 			// make room for p->mi->S
@@ -335,6 +335,15 @@ static void *worker_pipeline(void *shared, int step, void *in)
     return 0;
 }
 
+/**
+ * Generate Index (mmi file)
+ *
+ * @param fp	fasta handle
+ * @param io         pointer to indexing parameters
+ * @param mo         pointer to mapping parameters
+ *
+ * @return 0 if success; -1 if _present_ unknown
+ */
 mm_idx_t *mm_idx_gen(mm_bseq_file_t *fp, int w, int k, int b, int flag, int mini_batch_size, int n_threads, uint64_t batch_size)
 {
 	pipeline_t pl;

@@ -12,9 +12,9 @@ struct mm_bseq_file_s;
 typedef struct mm_bseq_file_s mm_bseq_file_t;
 
 typedef struct {
-	int l_seq, rid;
+	int l_seq, rid; // l_seq表示序列的长度
 	char *name, *seq, *qual, *comment;
-} mm_bseq1_t;
+} mm_bseq1_t; // 表示一条序列
 
 mm_bseq_file_t *mm_bseq_open(const char *fn);
 void mm_bseq_close(mm_bseq_file_t *fp);

@@ -28,14 +28,14 @@ void ksw_extd2_sse(void *km, int qlen, const uint8_t *query, int tlen, const uin
 #endif // ~KSW_CPU_DISPATCH
 {
 #define __dp_code_block1 \
-	z = _mm_load_si128(&s[t]); \
+	z = _mm_load_si128(&s[t]);                       /* z <- s[r][t..t+15] */\
 	xt1 = _mm_load_si128(&x[t]);                     /* xt1 <- x[r-1][t..t+15] */ \
 	tmp = _mm_srli_si128(xt1, 15);                   /* tmp <- x[r-1][t+15] */ \
 	xt1 = _mm_or_si128(_mm_slli_si128(xt1, 1), x1_); /* xt1 <- x[r-1][t-1..t+14] */ \
 	x1_ = tmp; \
 	vt1 = _mm_load_si128(&v[t]);                     /* vt1 <- v[r-1][t..t+15] */ \
-	tmp = _mm_srli_si128(vt1, 15);                   /* tmp <- v[r-1][t+15] */ \
-	vt1 = _mm_or_si128(_mm_slli_si128(vt1, 1), v1_); /* vt1 <- v[r-1][t-1..t+14] */ \
+	tmp = _mm_srli_si128(vt1, 15);                   /* tmp <- v[r-1][t+15] 右移，tmp[0] == xt1[15] */ \
+	vt1 = _mm_or_si128(_mm_slli_si128(vt1, 1), v1_); /* vt1 <- v[r-1][t-1..t+14] 注意x1_是上一次循环的xt1[r-1][t+15] */ \
 	v1_ = tmp; \
 	a = _mm_add_epi8(xt1, vt1);                      /* a <- x[r-1][t-1..t+14] + v[r-1][t-1..t+14] */ \
 	ut = _mm_load_si128(&u[t]);                      /* ut <- u[t..t+15] */ \
@@ -44,19 +44,26 @@ void ksw_extd2_sse(void *km, int qlen, const uint8_t *query, int tlen, const uin
 	tmp = _mm_srli_si128(x2t1, 15); \
 	x2t1= _mm_or_si128(_mm_slli_si128(x2t1, 1), x21_); \
 	x21_= tmp; \
-	a2= _mm_add_epi8(x2t1, vt1); \
-	b2= _mm_add_epi8(_mm_load_si128(&y2[t]), ut);
+	a2= _mm_add_epi8(x2t1, vt1);                     /* a2 <- x2[r-1][t-1..t+14] + v[r-1][t-1..t+14] */ \
+	b2= _mm_add_epi8(_mm_load_si128(&y2[t]), ut);    /* b2 <- y2[r-1][t..t+15] + u[r-1][t..t+15] */
+
 
 #define __dp_code_block2 \
+    /* 1. 更新u v； 2. 用a b a2 b2作为临时变量，为下面更新x y作准备 */ \
 	_mm_store_si128(&u[t], _mm_sub_epi8(z, vt1));    /* u[r][t..t+15] <- z - v[r-1][t-1..t+14] */ \
 	_mm_store_si128(&v[t], _mm_sub_epi8(z, ut));     /* v[r][t..t+15] <- z - u[r-1][t..t+15] */ \
 	tmp = _mm_sub_epi8(z, q_); \
-	a = _mm_sub_epi8(a, tmp); \
-	b = _mm_sub_epi8(b, tmp); \
+	a = _mm_sub_epi8(a, tmp);      /*  a = x[r-1][t-1:t+15] + v[r-1][t-1：t+15] - z[r][t:t+16] + q */ \
+	b = _mm_sub_epi8(b, tmp);      /*  b = y[r-1][t:t+16] + u[r-1][t:t+16] - z[r][t:t+16] + q */ \
 	tmp = _mm_sub_epi8(z, q2_); \
-	a2= _mm_sub_epi8(a2, tmp); \
-	b2= _mm_sub_epi8(b2, tmp);
+	a2= _mm_sub_epi8(a2, tmp); /*  a2 = x2[r-1][t-1:t+15] + v[r-1][t-1：t+15] - z[r][t:t+16] + q2 */ \
+	b2= _mm_sub_epi8(b2, tmp); /*  b2 = y2[r-1][t:t+16] + u[r-1][t:t+16] - z[r][t:t+16] + q2 */
 
+	/*************************/
+//	printf("qlen %d tlen %d\n", qlen, tlen);
+	/*************************/
+
+	// qe是gapopen+gapextension
 	int r, t, qe = q + e, n_col_, *off = 0, *off_end = 0, tlen_, qlen_, last_st, last_en, wl, wr, max_sc, min_sc, long_thres, long_diff;
 	int with_cigar = !(flag&KSW_EZ_SCORE_ONLY), approx_max = !!(flag&KSW_EZ_APPROX_MAX);
 	int32_t *H = 0, H0 = 0, last_H0_t = 0;
@@ -64,42 +71,44 @@ void ksw_extd2_sse(void *km, int qlen, const uint8_t *query, int tlen, const uin
 	__m128i q_, q2_, qe_, qe2_, zero_, sc_mch_, sc_mis_, m1_, sc_N_;
 	__m128i *u, *v, *x, *y, *x2, *y2, *s, *p = 0;
 
-	ksw_reset_extz(ez);
-	if (m <= 1 || qlen <= 0 || tlen <= 0) return;
+	ksw_reset_extz(ez); // 初始化用于记录返回值的结构体
+	if (m <= 1 || qlen <= 0 || tlen <= 0) return; // qlen是query length，tlen是target length。
 
-	if (q2 + e2 < q + e) t = q, q = q2, q2 = t, t = e, e = e2, e2 = t; // make sure q+e no larger than q2+e2
+	if (q2 + e2 < q + e) t = q, q = q2, q2 = t, t = e, e = e2, e2 = t; // make sure q+e no larger than q2+e2，如果不满足，就交换q q2，e e2。
 
-	zero_   = _mm_set1_epi8(0);
+	zero_   = _mm_set1_epi8(0); // 返回的都是__m128i
 	q_      = _mm_set1_epi8(q);
 	q2_     = _mm_set1_epi8(q2);
 	qe_     = _mm_set1_epi8(q + e);
 	qe2_    = _mm_set1_epi8(q2 + e2);
-	sc_mch_ = _mm_set1_epi8(mat[0]);
-	sc_mis_ = _mm_set1_epi8(mat[1]);
-	sc_N_   = mat[m*m-1] == 0? _mm_set1_epi8(-e2) : _mm_set1_epi8(mat[m*m-1]);
+	sc_mch_ = _mm_set1_epi8(mat[0]); // match score
+	sc_mis_ = _mm_set1_epi8(mat[1]); // mismatch score
+	sc_N_   = mat[m*m-1] == 0 ? _mm_set1_epi8(-e2) : _mm_set1_epi8(mat[m*m-1]); // N score，如果条件为真，表示mat矩阵中没有N score。
 	m1_     = _mm_set1_epi8(m - 1); // wildcard
 
-	if (w < 0) w = tlen > qlen? tlen : qlen;
-	wl = wr = w;
-	tlen_ = (tlen + 15) / 16;
-	n_col_ = qlen < tlen? qlen : tlen;
-	n_col_ = ((n_col_ < w + 1? n_col_ : w + 1) + 15) / 16 + 1;
+	// TODO？？ target len和query len缩小16倍，因为16路并发？
+	if (w < 0) w = tlen > qlen? tlen : qlen; // w是bandwidth ? 什么含义
+	wl = wr = w; // wl和wr被用来确定rt坐标系中t的范围
+	tlen_ = (tlen + 15) / 16; //
+	n_col_ = qlen < tlen ? qlen : tlen;
+	n_col_ = ((n_col_ < w + 1 ? n_col_ : w + 1) + 15) / 16 + 1; // qlen tlen中较短的一个向上对16取整然后除以16，再加一
 	qlen_ = (qlen + 15) / 16;
 	for (t = 1, max_sc = mat[0], min_sc = mat[1]; t < m * m; ++t) {
-		max_sc = max_sc > mat[t]? max_sc : mat[t];
-		min_sc = min_sc < mat[t]? min_sc : mat[t];
+		max_sc = max_sc > mat[t] ? max_sc : mat[t];
+		min_sc = min_sc < mat[t] ? min_sc : mat[t];
 	}
+	// mat中的最低负分需要大于2*(q+e)
 	if (-min_sc > 2 * (q + e)) return; // otherwise, we won't see any mismatches
 
-	long_thres = e != e2? (q2 - q) / (e - e2) - 1 : 0;
+	long_thres = e != e2? (q2 - q) / (e - e2) - 1 : 0;// long_thres是cost函数的交叉点
 	if (q2 + e2 + long_thres * e2 > q + e + long_thres * e)
 		++long_thres;
-	long_diff = long_thres * (e - e2) - (q2 - q) - e2;
+	long_diff = long_thres * (e - e2) - (q2 - q) - e2; // 理想情况下是-e2。
 
-	mem = (uint8_t*)kcalloc(km, tlen_ * 8 + qlen_ + 1, 16);
+	mem = (uint8_t*)kcalloc(km, tlen_ * 8 + qlen_ + 1, 16); // tlen_ 和qlen_ 是向上对16取整，然后除以16得到的结果
 	u = (__m128i*)(((size_t)mem + 15) >> 4 << 4); // 16-byte aligned
 	v = u + tlen_, x = v + tlen_, y = x + tlen_, x2 = y + tlen_, y2 = x2 + tlen_;
-	s = y2 + tlen_, sf = (uint8_t*)(s + tlen_), qr = sf + tlen_ * 16;
+	s = y2 + tlen_, sf = (uint8_t*)(s + tlen_), qr = sf + tlen_ * 16; // 这里的*16是sf的指针类型所致
 	memset(u,  -q  - e,  tlen_ * 16);
 	memset(v,  -q  - e,  tlen_ * 16);
 	memset(x,  -q  - e,  tlen_ * 16);
@@ -112,23 +121,41 @@ void ksw_extd2_sse(void *km, int qlen, const uint8_t *query, int tlen, const uin
 	}
 	if (with_cigar) {
 		mem2 = (uint8_t*)kmalloc(km, ((size_t)(qlen + tlen - 1) * n_col_ + 1) * 16);
-		p = (__m128i*)(((size_t)mem2 + 15) >> 4 << 4);
+		p = (__m128i*)(((size_t)mem2 + 15) >> 4 << 4); // 向上取整
 		off = (int*)kmalloc(km, (qlen + tlen - 1) * sizeof(int) * 2);
 		off_end = off + qlen + tlen - 1;
 	}
 
+	// qr是query reverse，存储qlen个int8_t；
+	// sf是target，存储tlen个int8_t；
 	for (t = 0; t < qlen; ++t) qr[t] = query[qlen - 1 - t];
 	memcpy(sf, target, tlen);
 
+	/*
+	 * r 的范围：[0, qlen+tlen-1)
+	 * t 的范围：[0, tlen)
+	 * */
 	for (r = 0, last_st = last_en = -1; r < qlen + tlen - 1; ++r) {
-		int st = 0, en = tlen - 1, st0, en0, st_, en_;
+	    /* 本次循环中t的取值范围：[st,en]*/
+	int st = 0, en = tlen - 1;
+		/* st和en的备份 */
+		int st0, en0;
+		int st_, en_;
+
 		int8_t x1, x21, v1;
+
+		/* qrr 指向qr序列中的某位置，使得在本次循环中target[i]和qrr[i]刚好匹配*/
 		uint8_t *qrr = qr + (qlen - 1 - r);
+
 		int8_t *u8 = (int8_t*)u, *v8 = (int8_t*)v, *x8 = (int8_t*)x, *x28 = (int8_t*)x2;
 		__m128i x1_, x21_, v1_;
-		// find the boundaries
-		if (st < r - qlen + 1) st = r - qlen + 1;
-		if (en > r) en = r;
+
+
+		/* 计算st和en，因为qlen和rlen的长度不等，r不同时t的取值范围也不同。
+		 * 下面计算t的取值范围[st,en]，代码用巧妙的手段保证qrr[st:en]和target[st:en]匹配。
+		 * */
+		if (st < r - qlen + 1) st = r - qlen + 1; // 在 r > qlen-1的时候，t的下限为r-qlen-1
+		if (en > r) en = r; // 在r < tlen的时候，t的上限为r，而非tlen-1
 		if (st < (r-wr+1)>>1) st = (r-wr+1)>>1; // take the ceil
 		if (en > (r+wl)>>1) en = (r+wl)>>1; // take the floor
 		if (st > en) {
@@ -136,12 +163,17 @@ void ksw_extd2_sse(void *km, int qlen, const uint8_t *query, int tlen, const uin
 			break;
 		}
 		st0 = st, en0 = en;
+
+		/* st向下取整16，en向上取整16再减一，例如：[5,31] -> [0,31], [16,32] -> [16, 47]
+		 * st en表示的t的范围是闭区间[st,en]
+		 * */
 		st = st / 16 * 16, en = (en + 16) / 16 * 16 - 1;
-		// set boundary conditions
-		if (st > 0) {
-			if (st - 1 >= last_st && st - 1 <= last_en) {
+
+		// set boundary conditions，设置了x1和v1，也就是边界处的x y u v的值
+		if (st > 0) { // st > 0，表示已不用设置t=-1处的边界条件，但是为了下面的计算，需要设置(r-1, t-1)处的边界条件
+			if (st - 1 >= last_st && st - 1 <= last_en) { // 表示st从一个向量跳到另一个向量时，需要额外设置边界条件 TODO && 右边的条件我认为没必要
 				x1 = x8[st - 1], x21 = x28[st - 1], v1 = v8[st - 1]; // (r-1,s-1) calculated in the last round
-			} else {
+			}else{ // TODO 此处的else中的语句我依然觉得没必要
 				x1 = -q - e, x21 = -q2 - e2;
 				v1 = -q - e;
 			}
@@ -149,47 +181,61 @@ void ksw_extd2_sse(void *km, int qlen, const uint8_t *query, int tlen, const uin
 			x1 = -q - e, x21 = -q2 - e2;
 			v1 = r == 0? -q - e : r < long_thres? -e : r == long_thres? long_diff : -e2;
 		}
+
+        /* 一般来说，en <= r，但是在en向上对16取整减一之后就不一定了
+         * en >= r的时候，设置(r-1, r)处的边界条件；en>r的时候就没必要设置边界条件了。
+         * 初始化u y y2
+         * */
 		if (en >= r) {
 			((int8_t*)y)[r] = -q - e, ((int8_t*)y2)[r] = -q2 - e2;
 			u8[r] = r == 0? -q - e : r < long_thres? -e : r == long_thres? long_diff : -e2;
 		}
-		// loop fission: set scores first
-		if (!(flag & KSW_EZ_GENERIC_SC)) {
+
+
+		/* 计算s，s长度tlen，s是sf[st0:en0]和qrr[st0:en0]比对的分数 */
+		if (!(flag & KSW_EZ_GENERIC_SC)) { // 通配符N match的分数用sc_N_
 			for (t = st0; t <= en0; t += 16) {
 				__m128i sq, st, tmp, mask;
 				sq = _mm_loadu_si128((__m128i*)&sf[t]);
 				st = _mm_loadu_si128((__m128i*)&qrr[t]);
-				mask = _mm_or_si128(_mm_cmpeq_epi8(sq, m1_), _mm_cmpeq_epi8(st, m1_));
+				mask = _mm_or_si128(_mm_cmpeq_epi8(sq, m1_), _mm_cmpeq_epi8(st, m1_)); // m1_ = m -1; mask表示序列是否有通配符
 				tmp = _mm_cmpeq_epi8(sq, st);
 #ifdef __SSE4_1__
 				tmp = _mm_blendv_epi8(sc_mis_, sc_mch_, tmp);
 				tmp = _mm_blendv_epi8(tmp,     sc_N_,   mask);
 #else
-				tmp = _mm_or_si128(_mm_andnot_si128(tmp,  sc_mis_), _mm_and_si128(tmp,  sc_mch_));
-				tmp = _mm_or_si128(_mm_andnot_si128(mask, tmp),     _mm_and_si128(mask, sc_N_));
+				tmp = _mm_or_si128(_mm_andnot_si128(tmp,  sc_mis_), _mm_and_si128(tmp,  sc_mch_)); // 计算序列各个位置的分数，要么是match要么是mismatch
+				tmp = _mm_or_si128(_mm_andnot_si128(mask, tmp),     _mm_and_si128(mask, sc_N_)); // 计算序列各个位置的分数，要么是match要么是mismatch要么是通配符
 #endif
 				_mm_storeu_si128((__m128i*)((int8_t*)s + t), tmp);
 			}
-		} else {
+		} else {  // 通配符N match的分数用mat中的
 			for (t = st0; t <= en0; ++t)
 				((uint8_t*)s)[t] = mat[sf[t] * m + qrr[t]];
 		}
-		// core loop
-		x1_  = _mm_cvtsi32_si128((uint8_t)x1);
+
+        /* core loop
+         * x y x2 y2 u v，分别存储r-1坐标下的值
+         * x1表示   x[r-1,-1]
+         * x21表示  x2[r-1,-1]
+         * v1表示   v[r-1,-1]
+         * */
+		x1_  = _mm_cvtsi32_si128((uint8_t)x1); // copy到低32位
 		x21_ = _mm_cvtsi32_si128((uint8_t)x21);
 		v1_  = _mm_cvtsi32_si128((uint8_t)v1);
 		st_ = st / 16, en_ = en / 16;
-		assert(en_ - st_ + 1 <= n_col_);
+		assert(en_ - st_ + 1 <= n_col_); // 列数目
 		if (!with_cigar) { // score only
 			for (t = st_; t <= en_; ++t) {
 				__m128i z, a, b, a2, b2, xt1, x2t1, vt1, ut, tmp;
 				__dp_code_block1;
+
 #ifdef __SSE4_1__
-				z = _mm_max_epi8(z, a);
-				z = _mm_max_epi8(z, b);
-				z = _mm_max_epi8(z, a2);
-				z = _mm_max_epi8(z, b2);
-				z = _mm_min_epi8(z, sc_mch_);
+				z = _mm_max_epi8(z, a); // a = x + v
+				z = _mm_max_epi8(z, b); // b = y + u
+				z = _mm_max_epi8(z, a2); // a2 = x2 + v
+				z = _mm_max_epi8(z, b2); // b2 = y2 + u
+				z = _mm_min_epi8(z, sc_mch_); // z对应分数
 				__dp_code_block2; // save u[] and v[]; update a, b, a2 and b2
 				_mm_store_si128(&x[t],  _mm_sub_epi8(_mm_max_epi8(a,  zero_), qe_));
 				_mm_store_si128(&y[t],  _mm_sub_epi8(_mm_max_epi8(b,  zero_), qe_));
@@ -222,15 +268,33 @@ void ksw_extd2_sse(void *km, int qlen, const uint8_t *query, int tlen, const uin
 			off[r] = st, off_end[r] = en;
 			for (t = st_; t <= en_; ++t) {
 				__m128i d, z, a, b, a2, b2, xt1, x2t1, vt1, ut, tmp;
-				__dp_code_block1;
+//				__dp_code_block1;
+                z = _mm_load_si128(&s[t]);                       /* z <- s[r][t..t+15] */
+                xt1 = _mm_load_si128(&x[t]);                     /* xt1 <- x[r-1][t..t+15] */
+                tmp = _mm_srli_si128(xt1, 15);                   /* tmp <- x[r-1][t+15] */
+                xt1 = _mm_or_si128(_mm_slli_si128(xt1, 1), x1_); /* xt1 <- x[r-1][t-1..t+14] */
+                x1_ = tmp;
+                vt1 = _mm_load_si128(&v[t]);                     /* vt1 <- v[r-1][t..t+15] */
+                tmp = _mm_srli_si128(vt1, 15);                   /* tmp <- v[r-1][t+15] 右移，tmp[0] == xt1[15] */
+                vt1 = _mm_or_si128(_mm_slli_si128(vt1, 1), v1_); /* vt1 <- v[r-1][t-1..t+14] 注意x1_是上一次循环的xt1[r-1][t+15] */
+                v1_ = tmp;
+                a = _mm_add_epi8(xt1, vt1);                      /* a <- x[r-1][t-1..t+14] + v[r-1][t-1..t+14] */
+                ut = _mm_load_si128(&u[t]);                      /* ut <- u[t..t+15] */
+                b = _mm_add_epi8(_mm_load_si128(&y[t]), ut);     /* b <- y[r-1][t..t+15] + u[r-1][t..t+15] */
+                x2t1= _mm_load_si128(&x2[t]);
+                tmp = _mm_srli_si128(x2t1, 15);
+                x2t1= _mm_or_si128(_mm_slli_si128(x2t1, 1), x21_);
+                x21_= tmp;
+                a2= _mm_add_epi8(x2t1, vt1);                     /* a2 <- x2[r-1][t-1..t+14] + v[r-1][t-1..t+14] */
+                b2= _mm_add_epi8(_mm_load_si128(&y2[t]), ut);    /* b2 <- y2[r-1][t..t+15] + u[r-1][t..t+15] */
 #ifdef __SSE4_1__
-				d = _mm_and_si128(_mm_cmpgt_epi8(a, z), _mm_set1_epi8(1));       // d = a  > z? 1 : 0
+				d = _mm_and_si128(_mm_cmpgt_epi8(a, z), _mm_set1_epi8(1));       // d = a  > z? 1 : 0 来源于Eij
 				z = _mm_max_epi8(z, a);
-				d = _mm_blendv_epi8(d, _mm_set1_epi8(2), _mm_cmpgt_epi8(b,  z)); // d = b  > z? 2 : d
+				d = _mm_blendv_epi8(d, _mm_set1_epi8(2), _mm_cmpgt_epi8(b,  z)); // d = b  > z? 2 : d 来源于Fij
 				z = _mm_max_epi8(z, b);
-				d = _mm_blendv_epi8(d, _mm_set1_epi8(3), _mm_cmpgt_epi8(a2, z)); // d = a2 > z? 3 : d
+				d = _mm_blendv_epi8(d, _mm_set1_epi8(3), _mm_cmpgt_epi8(a2, z)); // d = a2 > z? 3 : d 来源于E2ij
 				z = _mm_max_epi8(z, a2);
-				d = _mm_blendv_epi8(d, _mm_set1_epi8(4), _mm_cmpgt_epi8(b2, z)); // d = a2 > z? 3 : d
+				d = _mm_blendv_epi8(d, _mm_set1_epi8(4), _mm_cmpgt_epi8(b2, z)); // d = b2 > z? 4 : d 来源于F2ij
 				z = _mm_max_epi8(z, b2);
 				z = _mm_min_epi8(z, sc_mch_);
 #else // we need to emulate SSE4.1 intrinsics _mm_max_epi8() and _mm_blendv_epi8()
@@ -252,24 +316,48 @@ void ksw_extd2_sse(void *km, int qlen, const uint8_t *query, int tlen, const uin
 				__dp_code_block2;
 				tmp = _mm_cmpgt_epi8(a, zero_);
 				_mm_store_si128(&x[t],  _mm_sub_epi8(_mm_and_si128(tmp, a),  qe_));
-				d = _mm_or_si128(d, _mm_and_si128(tmp, _mm_set1_epi8(0x08))); // d = a > 0? 1<<3 : 0
+				d = _mm_or_si128(d, _mm_and_si128(tmp, _mm_set1_epi8(0x08))); // d = (a > 0? 1<<3 : 0) | d
 				tmp = _mm_cmpgt_epi8(b, zero_);
 				_mm_store_si128(&y[t],  _mm_sub_epi8(_mm_and_si128(tmp, b),  qe_));
-				d = _mm_or_si128(d, _mm_and_si128(tmp, _mm_set1_epi8(0x10))); // d = b > 0? 1<<4 : 0
+				d = _mm_or_si128(d, _mm_and_si128(tmp, _mm_set1_epi8(0x10))); // d = (b > 0? 1<<4 : 0) | d
 				tmp = _mm_cmpgt_epi8(a2, zero_);
 				_mm_store_si128(&x2[t], _mm_sub_epi8(_mm_and_si128(tmp, a2), qe2_));
-				d = _mm_or_si128(d, _mm_and_si128(tmp, _mm_set1_epi8(0x20))); // d = a > 0? 1<<5 : 0
+				d = _mm_or_si128(d, _mm_and_si128(tmp, _mm_set1_epi8(0x20))); // d = (a2 > 0? 1<<5 : 0) | d
 				tmp = _mm_cmpgt_epi8(b2, zero_);
 				_mm_store_si128(&y2[t], _mm_sub_epi8(_mm_and_si128(tmp, b2), qe2_));
-				d = _mm_or_si128(d, _mm_and_si128(tmp, _mm_set1_epi8(0x40))); // d = b > 0? 1<<6 : 0
+				d = _mm_or_si128(d, _mm_and_si128(tmp, _mm_set1_epi8(0x40))); // d = (b2 > 0? 1<<6 : 0) | d
 				_mm_store_si128(&pr[t], d);
 			}
+            /*************************/
+//            for (t = st0; t <= en0; ++t) {
+//                printf("0x%x\t", ((int8_t*)pr)[t]);
+//            }
+//            printf("\n");
+            /*************************/
 		} else { // gap right-alignment
-			__m128i *pr = p + (size_t)r * n_col_ - st_;
+			__m128i *pr = p + (size_t)r * n_col_ - st_; // 这里减去st_是因为下面的是给pr[t]进行赋值
 			off[r] = st, off_end[r] = en;
 			for (t = st_; t <= en_; ++t) {
 				__m128i d, z, a, b, a2, b2, xt1, x2t1, vt1, ut, tmp;
-				__dp_code_block1;
+//				__dp_code_block1;
+                z = _mm_load_si128(&s[t]);                       /* z <- s[r][t..t+15] */
+                xt1 = _mm_load_si128(&x[t]);                     /* xt1 <- x[r-1][t..t+15] */
+                tmp = _mm_srli_si128(xt1, 15);                   /* tmp <- x[r-1][t+15] */
+                xt1 = _mm_or_si128(_mm_slli_si128(xt1, 1), x1_); /* xt1 <- x[r-1][t-1..t+14] */
+                x1_ = tmp;
+                vt1 = _mm_load_si128(&v[t]);                     /* vt1 <- v[r-1][t..t+15] */
+                tmp = _mm_srli_si128(vt1, 15);                   /* tmp <- v[r-1][t+15] 右移，tmp[0] == xt1[15] */
+                vt1 = _mm_or_si128(_mm_slli_si128(vt1, 1), v1_); /* vt1 <- v[r-1][t-1..t+14] 注意x1_是上一次循环的xt1[r-1][t+15] */
+                v1_ = tmp;
+                a = _mm_add_epi8(xt1, vt1);                      /* a <- x[r-1][t-1..t+14] + v[r-1][t-1..t+14] */
+                ut = _mm_load_si128(&u[t]);                      /* ut <- u[t..t+15] */
+                b = _mm_add_epi8(_mm_load_si128(&y[t]), ut);     /* b <- y[r-1][t..t+15] + u[r-1][t..t+15] */
+                x2t1= _mm_load_si128(&x2[t]);
+                tmp = _mm_srli_si128(x2t1, 15);
+                x2t1= _mm_or_si128(_mm_slli_si128(x2t1, 1), x21_);
+                x21_= tmp;
+                a2= _mm_add_epi8(x2t1, vt1);                     /* a2 <- x2[r-1][t-1..t+14] + v[r-1][t-1..t+14] */
+                b2= _mm_add_epi8(_mm_load_si128(&y2[t]), ut);    /* b2 <- y2[r-1][t..t+15] + u[r-1][t..t+15] */
 #ifdef __SSE4_1__
 				d = _mm_andnot_si128(_mm_cmpgt_epi8(z, a), _mm_set1_epi8(1));    // d = z > a?  0 : 1
 				z = _mm_max_epi8(z, a);
@@ -299,37 +387,45 @@ void ksw_extd2_sse(void *km, int qlen, const uint8_t *query, int tlen, const uin
 				__dp_code_block2;
 				tmp = _mm_cmpgt_epi8(zero_, a);
 				_mm_store_si128(&x[t],  _mm_sub_epi8(_mm_andnot_si128(tmp, a),  qe_));
-				d = _mm_or_si128(d, _mm_andnot_si128(tmp, _mm_set1_epi8(0x08))); // d = a > 0? 1<<3 : 0
+				d = _mm_or_si128(d, _mm_andnot_si128(tmp, _mm_set1_epi8(0x08))); // d = (a >= 0? 1<<3 : 0) | d，这里的a表示的是x+v-z+q，表示Ei-1,j >= Hi-1,j - q
 				tmp = _mm_cmpgt_epi8(zero_, b);
 				_mm_store_si128(&y[t],  _mm_sub_epi8(_mm_andnot_si128(tmp, b),  qe_));
-				d = _mm_or_si128(d, _mm_andnot_si128(tmp, _mm_set1_epi8(0x10))); // d = b > 0? 1<<4 : 0
+				d = _mm_or_si128(d, _mm_andnot_si128(tmp, _mm_set1_epi8(0x10))); // d = (b >= 0? 1<<4 : 0) | d
 				tmp = _mm_cmpgt_epi8(zero_, a2);
 				_mm_store_si128(&x2[t], _mm_sub_epi8(_mm_andnot_si128(tmp, a2), qe2_));
-				d = _mm_or_si128(d, _mm_andnot_si128(tmp, _mm_set1_epi8(0x20))); // d = a > 0? 1<<5 : 0
+				d = _mm_or_si128(d, _mm_andnot_si128(tmp, _mm_set1_epi8(0x20))); // d = (a >= 0? 1<<5 : 0) | d
 				tmp = _mm_cmpgt_epi8(zero_, b2);
 				_mm_store_si128(&y2[t], _mm_sub_epi8(_mm_andnot_si128(tmp, b2), qe2_));
-				d = _mm_or_si128(d, _mm_andnot_si128(tmp, _mm_set1_epi8(0x40))); // d = b > 0? 1<<6 : 0
+				d = _mm_or_si128(d, _mm_andnot_si128(tmp, _mm_set1_epi8(0x40))); // d = (b >= 0? 1<<6 : 0) | d
 				_mm_store_si128(&pr[t], d);
 			}
-		}
+            /*************************/
+//            for (t = st0; t <= en0; ++t) {
+//                printf("0x%x\t", ((int8_t*)pr)[t]);
+//            }
+//            printf("\n");
+            /*************************/
+        }
+
+
 		if (!approx_max) { // find the exact max with a 32-bit score array
 			int32_t max_H, max_t;
 			// compute H[], max_H and max_t
 			if (r > 0) {
 				int32_t HH[4], tt[4], en1 = st0 + (en0 - st0) / 4 * 4, i;
 				__m128i max_H_, max_t_;
-				max_H = H[en0] = en0 > 0? H[en0-1] + u8[en0] : H[en0] + v8[en0]; // special casing the last element
+				max_H = H[en0] = en0 > 0? H[en0-1] + u8[en0] : H[en0] + v8[en0]; // special casing the last element 算最后一个h[en0]的时候，根据其左上方的H来算，而不是其上方的H // 依据H[r][t] = H[r-1][t] + v[r][t] 或者 H[r][t] = H[r-1][t-1] + u[r][t]
 				max_t = en0;
 				max_H_ = _mm_set1_epi32(max_H);
 				max_t_ = _mm_set1_epi32(max_t);
-				for (t = st0; t < en1; t += 4) { // this implements: H[t]+=v8[t]-qe; if(H[t]>max_H) max_H=H[t],max_t=t;
+				for (t = st0; t < en1; t += 4) { // this implements: H[t]+=v8[t]; if(H[t]>max_H) max_H=H[t],max_t=t;
 					__m128i H1, tmp, t_;
 					H1 = _mm_loadu_si128((__m128i*)&H[t]);
-					t_ = _mm_setr_epi32(v8[t], v8[t+1], v8[t+2], v8[t+3]);
+					t_ = _mm_setr_epi32(v8[t], v8[t+1], v8[t+2], v8[t+3]); // 从前向后四个元素，依次放在31:0位 63:32位 。。。
 					H1 = _mm_add_epi32(H1, t_);
 					_mm_storeu_si128((__m128i*)&H[t], H1);
 					t_ = _mm_set1_epi32(t);
-					tmp = _mm_cmpgt_epi32(H1, max_H_);
+					tmp = _mm_cmpgt_epi32(H1, max_H_); // 若H1>max_H_，就把对应的位数置1。
 #ifdef __SSE4_1__
 					max_H_ = _mm_blendv_epi8(max_H_, H1, tmp);
 					max_t_ = _mm_blendv_epi8(max_t_, t_, tmp);
@@ -374,7 +470,16 @@ void ksw_extd2_sse(void *km, int qlen, const uint8_t *query, int tlen, const uin
 				ez->score = H0;
 		}
 		last_st = st, last_en = en;
-		//for (t = st0; t <= en0; ++t) printf("(%d,%d)\t(%d,%d,%d,%d)\t%d\n", r, t, ((int8_t*)u)[t], ((int8_t*)v)[t], ((int8_t*)x)[t], ((int8_t*)y)[t], H[t]); // for debugging
+        /*************************/
+//		for (t = st0; t <= en0; ++t) printf("(%d,%d)\t(u,v,x,y,x2,y2)(%d,%d,%d,%d,%d,%d)\t%d\n", r, t, ((int8_t*)u)[t], ((int8_t*)v)[t], ((int8_t*)x)[t], ((int8_t*)y)[t], ((int8_t*)x2)[t], ((int8_t*)y2)[t], H[t]); // for debugging
+        /*************************/
+//        printf("st %d en %d\n", st0, en0);
+//        for(t=0; t<st0; ++t){
+//            printf("*\t");
+//        }
+//        for (t = st0; t <= en0; ++t) printf("%d\t", H[t]);
+//        printf("\n");
+        /*************************/
 	}
 	kfree(km, mem);
 	if (!approx_max) kfree(km, H);
@@ -390,5 +495,10 @@ void ksw_extd2_sse(void *km, int qlen, const uint8_t *query, int tlen, const uin
 		}
 		kfree(km, mem2); kfree(km, off);
 	}
+    /*************************/
+//    printf("\n");
+//	print_cigar(ez);
+//    printf("\n");
+    /*************************/
 }
-#endif // __SSE2__
+#endif // __SSE2__ # 磁盘IO

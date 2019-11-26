@@ -6,3 +6,8 @@
 *.dSYM
 minimap2
 mappy.c
+cmake-build-debug
+data/16*
+data/chr*
+data/sam*
+记录.txt

@@ -100,6 +100,30 @@ int ksw_ll_i16(void *q, int tlen, const uint8_t *target, int gapo, int gape, int
 #define kfree(km, ptr) free((ptr))
 #endif
 
+/*****************************/
+#include <stdio.h>
+static inline void print_cigar(ksw_extz_t *ez){
+    int t;
+    printf("max   %d zdropped %d\n", ez->max, ez->zdropped);
+    printf("max_q %d max_t    %d\n", ez->max_q,  ez->max_t);
+    printf("mqe   %d mqe_t    %d\n", ez->mqe,  ez->mqe_t);
+    printf("mte   %d mte_q    %d\n", ez->mte,  ez->mte_q);
+    printf("score %d\n", ez->score);
+    printf("m_cigar   %d\n", ez->m_cigar);
+    printf("n_cigar   %d\n", ez->n_cigar);
+    printf("reach_end %d\n", ez->reach_end);
+    printf("cigar ");
+    for(t=0; t<ez->n_cigar; t++){
+        int c = ez->cigar[t];
+        printf("%d 0x%x\t", c >> 4, c&15);
+    }
+    printf("\n");
+}
+/*****************************/
+
+/* cigar是指针用于存储回溯结果
+ * op用0、1、2、3表示操作match、insert、delete、intron之一
+ * */
 static inline uint32_t *ksw_push_cigar(void *km, int *n_cigar, int *m_cigar, uint32_t *cigar, uint32_t op, int len)
 {
 	if (*n_cigar == 0 || op != (cigar[(*n_cigar) - 1]&0xf)) {
@@ -133,6 +157,7 @@ static inline void ksw_backtrack(void *km, int is_rot, int is_rev, int min_intro
 			if (off_end && j > off_end[i]) force_state = 1;
 			tmp = force_state < 0? p[(size_t)i * n_col + j - off[i]] : 0;
 		}
+		// 到这为止tmp已经是p中的对应的单字节数据了。
 		if (state == 0) state = tmp & 7; // if requesting the H state, find state one maximizes it.
 		else if (!(tmp >> (state + 2) & 1)) state = 0; // if requesting other states, _state_ stays the same if it is a continuation; otherwise, set to H
 		if (state == 0) state = tmp & 7; // TODO: probably this line can be merged into the "else if" line right above; not 100% sure

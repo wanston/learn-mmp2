@@ -59,6 +59,7 @@ typedef struct {
 	uint32_t len;    // length
 } mm_idx_seq_t;
 
+// fasta index (表示 mmi file)
 typedef struct {
 	int32_t b, w, k, flag;
 	uint32_t n_seq;            // number of reference sequences
@@ -148,12 +149,12 @@ typedef struct {
 
 // index reader
 typedef struct {
-	int is_idx, n_parts;
-	int64_t idx_size;
+	int is_idx, n_parts; // 是否是index
+	int64_t idx_size; // index文件的大小（多少字节）
 	mm_idxopt_t opt;
 	FILE *fp_out;
 	union {
-		struct mm_bseq_file_s *seq;
+		struct mm_bseq_file_s *seq; // 如果是fasta文件的话，就是seq；是mmi文件的话就是idx。
 		FILE *idx;
 	} fp;
 } mm_idx_reader_t;
