@@ -241,10 +241,10 @@ static void mm_idx_post(mm_idx_t *mi, int n_threads)
 #include "bseq.h"
 
 typedef struct {
-	int mini_batch_size; // 一批处理的大小
-	uint64_t batch_size, sum_len; // sum_len是文件中所有序列的总长度（bp）
-	mm_bseq_file_t *fp; // 要处理的文件
-	mm_idx_t *mi; // 表示索引
+	int mini_batch_size; 			// 一批处理的大小
+	uint64_t batch_size, sum_len; 	// 已经处理过的序列的总长度（bp）
+	mm_bseq_file_t *fp; 			// 序列文件
+	mm_idx_t *mi; 					// 索引
 } pipeline_t;
 
 typedef struct {
@@ -262,6 +262,16 @@ static void mm_idx_add(mm_idx_t *mi, int n, const mm128_t *a)
 	}
 }
 
+
+/**
+ * 构建索引的函数，分为三个step，step0 读取一批序列；step1 计算sketch；step2 保存sketch。
+ *
+ * @param shared: 指向pipeline_t结构体
+ * @param step: step编号，取值0 1 2
+ * @param in: step0的时候用不到；step1和step2的时候，in指向step_t结构体，该结构体保存的是step0中读取的一批序列。
+ *
+ * @return step0和step1的时候，返回的是step_t*，记录了这两步中用到的序列；step2的时候，返回0。
+ * */
 static void *worker_pipeline(void *shared, int step, void *in)
 {
 	int i;
@@ -305,7 +315,7 @@ static void *worker_pipeline(void *shared, int step, void *in)
 				if (!(p->mi->flag & MM_I_NO_SEQ)) {
 					for (j = 0; j < seq->len; ++j) { // TODO: this is not the fastest way, but let's first see if speed matters here
 						uint64_t o = p->sum_len + j;
-						int c = seq_nt4_table[(uint8_t)s->seq[i].seq[j]];
+						int c = seq_nt4_table[(uint8_t)s->seq[i].seq[j]]; // 把char转为int，值只有0到4
 						mm_seq4_set(p->mi->S, o, c);
 					}
 				}
@@ -327,7 +337,7 @@ static void *worker_pipeline(void *shared, int step, void *in)
 		}
 		free(s->seq); s->seq = 0;
 		return s;
-    } else if (step == 2) { // dispatch sketch to buckets
+    } else if (step == 2) { // step 2: dispatch sketch to buckets
         step_t *s = (step_t*)in;
 		mm_idx_add(p->mi, s->a.n, s->a.a);
 		kfree(0, s->a.a); free(s);

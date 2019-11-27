@@ -12,9 +12,9 @@ struct mm_bseq_file_s;
 typedef struct mm_bseq_file_s mm_bseq_file_t;
 
 typedef struct {
-	int l_seq, rid; // l_seq表示序列的长度
-	char *name, *seq, *qual, *comment;
-} mm_bseq1_t; // 表示一条序列
+	int l_seq, rid; // l_seq表示序列的长度， rid是后面处理该结构体的时候赋值的，是一个ID，表示是第几条被处理的
+	char *name, *seq, *qual, *comment; // seq是字符数组保存序列的碱基的值。
+} mm_bseq1_t; // 该结构体是读取fasta/fastq文件的函数的返回值，用于表示一条序列。
 
 mm_bseq_file_t *mm_bseq_open(const char *fn);
 void mm_bseq_close(mm_bseq_file_t *fp);

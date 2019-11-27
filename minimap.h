@@ -50,25 +50,25 @@ extern "C" {
 
 // emulate 128-bit integers and arrays
 typedef struct { uint64_t x, y; } mm128_t;
-typedef struct { size_t n, m; mm128_t *a; } mm128_v;
+typedef struct { size_t n, m; mm128_t *a; } mm128_v; // 表示128bit整型数组，n表示数组的元素的数目
 
 // minimap2 index
 typedef struct {
-	char *name;      // name of the db sequence
-	uint64_t offset; // offset in mm_idx_t::S
-	uint32_t len;    // length
-} mm_idx_seq_t;
+	char *name;      // name of the db sequence 序列名字
+	uint64_t offset; // offset in mm_idx_t::S 序列偏移，单位是bp
+	uint32_t len;    // length 序列长度
+} mm_idx_seq_t; // 在mm_idx_t中使用的，用于表示一条序列的属性的结构体。
 
 // fasta index (表示 mmi file)
 typedef struct {
-	int32_t b, w, k, flag;
+	int32_t b, w, k, flag;		// flag 是众多选项的或，表示该结构体中哪些属性是有值的，哪些属性是无值的。
 	uint32_t n_seq;            // number of reference sequences
 	int32_t index;
-	mm_idx_seq_t *seq;         // sequence name, length and offset
-	uint32_t *S;               // 4-bit packed sequence
+	mm_idx_seq_t *seq;         // 动态数组，每个元素表示一个序列的 sequence name, length and offset
+	uint32_t *S;               // 4-bit packed sequence // 表示所有序列的内容，4bit表示一个碱基。一个32bit int存储8个碱基
 	struct mm_idx_bucket_s *B; // index (hidden)
-	void *km, *h;
-} mm_idx_t;
+	void *km, *h; // km 是内存池
+} mm_idx_t; // 表示索引的结构体
 
 // minimap2 alignment
 typedef struct {
