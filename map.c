@@ -268,6 +268,10 @@ static mm_reg1_t *align_regs(const mm_mapopt_t *opt, const mm_idx_t *mi, void *k
 	return regs;
 }
 
+
+/**
+ *
+ * */
 void mm_map_frag(const mm_idx_t *mi, int n_segs, const int *qlens, const char **seqs, int *n_regs, mm_reg1_t **regs, mm_tbuf_t *b, const mm_mapopt_t *opt, const char *qname)
 {
 	int i, j, rep_len, qlen_sum, n_regs0, n_mini_pos;
@@ -398,26 +402,29 @@ mm_reg1_t *mm_map(const mm_idx_t *mi, int qlen, const char *seq, int *n_regs, mm
  **************************/
 
 typedef struct {
-	int mini_batch_size, n_processed, n_threads, n_fp;
+	int mini_batch_size, n_processed, n_threads, n_fp; // n_fp fp数组的大小
 	const mm_mapopt_t *opt;
-	mm_bseq_file_t **fp;
+	mm_bseq_file_t **fp; // 指针数组，每个元素表示一个fastq文件
 	const mm_idx_t *mi;
 	kstring_t str;
 
 	int n_parts;
 	uint32_t *rid_shift;
 	FILE *fp_split, **fp_parts;
-} pipeline_t;
+} pipeline_t;// index.c中也有pipeline_t结构体，该结构体存储对应pipeline的信息；相应的index.c 和 map.c中有各自的worker_pipeline。
 
 typedef struct {
 	const pipeline_t *p;
     int n_seq, n_frag;
-	mm_bseq1_t *seq;
+	mm_bseq1_t *seq; // 数组，每个元素一条fastq序列
 	int *n_reg, *seg_off, *n_seg, *rep_len, *frag_gap;
-	mm_reg1_t **reg;
-	mm_tbuf_t **buf;
+	mm_reg1_t **reg; // 指针数组，元素数目是n_seq
+	mm_tbuf_t **buf; // 指针数组，元素数目是线程数
 } step_t;
 
+/**
+ * @param i			单线程下，表示第几次运行的此函数
+ * */
 static void worker_for(void *_data, long i, int tid) // kt_for() callback
 {
     step_t *s = (step_t*)_data;
@@ -427,12 +434,16 @@ static void worker_for(void *_data, long i, int tid) // kt_for() callback
 	assert(s->n_seg[i] <= MM_MAX_SEG);
 	if (mm_dbg_flag & MM_DBG_PRINT_QNAME)
 		fprintf(stderr, "QR\t%s\t%d\t%d\n", s->seq[off].name, tid, s->seq[off].l_seq);
+
+	// 把本次处理的frag（多条seq）放到qlens qseqs中，TODO:: pe_ori是啥？
 	for (j = 0; j < s->n_seg[i]; ++j) {
 		if (s->n_seg[i] == 2 && ((j == 0 && (pe_ori>>1&1)) || (j == 1 && (pe_ori&1))))
 			mm_revcomp_bseq(&s->seq[off + j]);
 		qlens[j] = s->seq[off + j].l_seq;
 		qseqs[j] = s->seq[off + j].seq;
 	}
+
+	// map
 	if (s->p->opt->flag & MM_F_INDEPEND_SEG) {
 		for (j = 0; j < s->n_seg[i]; ++j) {
 			mm_map_frag(s->p->mi, 1, &qlens[j], &qseqs[j], &s->n_reg[off+j], &s->reg[off+j], b, s->p->opt, s->seq[off+j].name);
@@ -544,15 +555,15 @@ static void *worker_pipeline(void *shared, int step, void *in)
 			s->reg = (mm_reg1_t**)calloc(s->n_seq, sizeof(mm_reg1_t*));
 			for (i = 1, j = 0; i <= s->n_seq; ++i)
 				if (i == s->n_seq || !frag_mode || !mm_qname_same(s->seq[i-1].name, s->seq[i].name)) {
-					s->n_seg[s->n_frag] = i - j;
-					s->seg_off[s->n_frag++] = j;
+					s->n_seg[s->n_frag] = i - j; // 相邻的名字相同的seq称为一个frag，n_frag是frag的数目，n_seg是每个frag有几个seq。
+					s->seg_off[s->n_frag++] = j; // seg_off是每个frag的偏移
 					j = i;
 				}
 			return s;
 		} else free(s);
     } else if (step == 1) { // step 1: map
 		if (p->n_parts > 0) merge_hits((step_t*)in);
-		else kt_for(p->n_threads, worker_for, in, ((step_t*)in)->n_frag);
+		else kt_for(p->n_threads, worker_for, in, ((step_t*)in)->n_frag); // 对于单线程，运行n_frag次work_for函数
 		return in;
     } else if (step == 2) { // step 2: output
 		void *km = 0;
@@ -632,6 +643,16 @@ static mm_bseq_file_t **open_bseqs(int n, const char **fn)
 	return fp;
 }
 
+/**
+ * map
+ *
+ * @param idx		reference索引
+ * @param n_segs	待map的文件数
+ * @param fn		待map的文件
+ * @param opt		配置选项
+ * @param n_threads 线程数
+ * @return 0
+ * */
 int mm_map_file_frag(const mm_idx_t *idx, int n_segs, const char **fn, const mm_mapopt_t *opt, int n_threads)
 {
 	int i, pl_threads;

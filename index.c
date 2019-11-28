@@ -171,6 +171,10 @@ int32_t mm_idx_cal_max_occ(const mm_idx_t *mi, float f)
 
 /*********************************
  * Sort and generate hash tables *
+ *
+ * @param g 		实际为mm_idx_t* mi,指向要处理的表示索引的数据结构
+ * @param i 		用作mi->B[i]，本函数只处理该bucket
+ * @param tid		线程id
  *********************************/
 
 static void worker_post(void *g, long i, int tid)
@@ -189,7 +193,7 @@ static void worker_post(void *g, long i, int tid)
 	for (j = 1, n = 1, n_keys = 0, b->n = 0; j <= b->a.n; ++j) {
 		if (j == b->a.n || b->a.a[j].x>>8 != b->a.a[j-1].x>>8) {
 			++n_keys;
-			if (n > 1) b->n += n;
+			if (n > 1) b->n += n; // b->n记录相同的minimizer的总数
 			n = 1;
 		} else ++n;
 	}
@@ -250,7 +254,7 @@ typedef struct {
 typedef struct {
     int n_seq; // 数组的大小
 	mm_bseq1_t *seq; // 动态数组，每个元素表示一条序列（目前已知的是fasta的序列）
-	mm128_v a;
+	mm128_v a; // 元素为128bit数据的vector，用于保存由seq计算出的minimizer。
 } step_t; // 用于存储每一step中处理的序列，也就是一个batch的序列
 
 static void mm_idx_add(mm_idx_t *mi, int n, const mm128_t *a)
@@ -584,6 +588,13 @@ void mm_idx_reader_close(mm_idx_reader_t *r)
 	free(r);
 }
 
+/**
+ * 读取索引，返回mm_idx_t指针，该结构体表示reference的索引。
+ * 如果命令行中指定的是索引文件（.mmi），那么就会直接加载索引文件；
+ * 如果命令行中的是reference文件（.fasta），那么会根据fasta文件计算得到索引。
+ *
+ * @return 如果参数r已经执行过一次本函数，那么再次执行本函数会返回0。
+ * */
 mm_idx_t *mm_idx_reader_read(mm_idx_reader_t *r, int n_threads)
 {
 	mm_idx_t *mi;

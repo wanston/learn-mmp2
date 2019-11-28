@@ -122,7 +122,7 @@ static void *ktp_worker(void *data)
 		pthread_mutex_unlock(&p->mutex);
 
 		// working on w->step
-		w->data = p->func(p->shared, w->step, w->step? w->data : 0); // for the first step, input is NULL // 第一步执行前, w->data就是NULL；执行完后w->data才有内容。
+		w->data = p->func(p->shared, w->step, w->step? w->data : 0); // for the first step, input is NULL // 第一步执行前, w->data就是NULL；执行完后w->data才有内容，data一般是func函数中需要保存的中间信息（step_t结构体）。
 
 		// update step and let other workers know
 		pthread_mutex_lock(&p->mutex);

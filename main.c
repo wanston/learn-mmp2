@@ -330,7 +330,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "[ERROR] incorrect input: in the sr mode, please specify no more than two query files.\n");
 		return 1;
 	}
-	idx_rdr = mm_idx_reader_open(argv[o.ind], &ipt, fnw); // 读取fasta或者fastq文件
+	idx_rdr = mm_idx_reader_open(argv[o.ind], &ipt, fnw); // 读取索引文件（.mmi或者.fasta）
 	if (idx_rdr == 0) {
 		fprintf(stderr, "[ERROR] failed to open file '%s'\n", argv[o.ind]);
 		return 1;
@@ -349,8 +349,8 @@ int main(int argc, char *argv[])
 			mm_idx_reader_close(idx_rdr);
 			return 1;
 		}
-		if ((opt.flag & MM_F_OUT_SAM) && idx_rdr->n_parts == 1) {
-			if (mm_idx_reader_eof(idx_rdr)) {
+		if ((opt.flag & MM_F_OUT_SAM) && idx_rdr->n_parts == 1) { // 如果要求输出sam文件 且 是第一次读取索引，就写入sam的头信息。
+			if (mm_idx_reader_eof(idx_rdr)) { // 索引文件已被读到文件末尾
 				mm_write_sam_hdr(mi, rg, MM_VERSION, argc, argv);
 			} else {
 				mm_write_sam_hdr(0, rg, MM_VERSION, argc, argv);
@@ -361,13 +361,13 @@ int main(int argc, char *argv[])
 		if (mm_verbose >= 3)
 			fprintf(stderr, "[M::%s::%.3f*%.2f] loaded/built the index for %d target sequence(s)\n",
 					__func__, realtime() - mm_realtime0, cputime() / (realtime() - mm_realtime0), mi->n_seq);
-		if (argc != o.ind + 1) mm_mapopt_update(&opt, mi);
-		if (mm_verbose >= 3) mm_idx_stat(mi);
+		if (argc != o.ind + 1) mm_mapopt_update(&opt, mi); // 更新配置的option
+		if (mm_verbose >= 3) mm_idx_stat(mi); // 打印索引的状态信息
 		if (!(opt.flag & MM_F_FRAG_MODE)) {
 			for (i = o.ind + 1; i < argc; ++i)
-				mm_map_file(mi, argv[i], &opt, n_threads);
+				mm_map_file(mi, argv[i], &opt, n_threads);// map
 		} else {
-			mm_map_file_frag(mi, argc - (o.ind + 1), (const char**)&argv[o.ind + 1], &opt, n_threads);
+			mm_map_file_frag(mi, argc - (o.ind + 1), (const char**)&argv[o.ind + 1], &opt, n_threads);// map
 		}
 		mm_idx_destroy(mi);
 	}
