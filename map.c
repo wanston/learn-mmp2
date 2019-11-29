@@ -185,6 +185,7 @@ static mm128_t *collect_seed_hits_heap(void *km, const mm_mapopt_t *opt, int max
 	heap = (mm128_t*)kmalloc(km, n_m * sizeof(mm128_t)); // n_m是m的元素数目
 	a = (mm128_t*)kmalloc(km, *n_a * sizeof(mm128_t)); // n_a是m个match_t比对到的位置的总数
 
+	// heap 仅仅根据每个minimizer的第一个查询结果排序
 	for (i = 0, heap_size = 0; i < n_m; ++i) {
 		if (m[i].n > 0) {
 			heap[heap_size].x = m[i].cr[0];
@@ -198,7 +199,7 @@ static mm128_t *collect_seed_hits_heap(void *km, const mm_mapopt_t *opt, int max
 		mm128_t *p;
 		uint64_t r = heap->x;
 		int32_t is_self, rpos = (uint32_t)r >> 1;
-		if (!skip_seed(opt->flag, r, q, qname, qlen, mi, &is_self)) {
+		if (!skip_seed(opt->flag, r, q, qname, qlen, mi, &is_self)) { // ???
 			if ((r&1) == (q->q_pos&1)) { // forward strand
 				p = &a[n_for++];
 				p->x = (r&0xffffffff00000000ULL) | rpos;
