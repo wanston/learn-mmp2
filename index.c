@@ -63,11 +63,19 @@ void mm_idx_destroy(mm_idx_t *mi)
 	free(mi->B); free(mi->S); free(mi);
 }
 
+/**
+ *  根据minimizer查索引，返回索引中记录的minimizer的位置信息
+ *
+ *  @param mi           索引
+ *  @param minier       minimizer，其有效位数为2k，k是kmer长度，因为minmizer是窗口中最小的kmer经过hash得到的，hash前后kmer的位数不变。
+ *  @param n            记录返回的uint64_t动态数组的大小，每个uint64_t值记录minimizer的位置信息，应该是对应mm128_t中的y。
+ *  @retrun             返回的指针指向动态数组
+ * */
 const uint64_t *mm_idx_get(const mm_idx_t *mi, uint64_t minier, int *n)
 {
-	int mask = (1<<mi->b) - 1;
+	int mask = (1<<mi->b) - 1; // minimizer的哈希值的mask
 	khint_t k;
-	mm_idx_bucket_t *b = &mi->B[minier&mask];
+	mm_idx_bucket_t *b = &mi->B[minier&mask]; //
 	idxhash_t *h = (idxhash_t*)b->h;
 	*n = 0;
 	if (h == 0) return 0;

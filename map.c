@@ -60,6 +60,17 @@ static int mm_dust_minier(void *km, int n, mm128_t *a, int l_seq, const char *se
 	return k; // the new size
 }
 
+/**
+ * 从n_segs条序列中生成minimizer，存入到mv中。
+ *
+ * @param km        内存池
+ * @param opt
+ * @param mi        索引
+ * @param n_segs    序列的条数
+ * @param qlens     序列的长度数组
+ * @param seqs      序列数组
+ * @param mv        保存生成的minimizer
+ * */
 static void collect_minimizers(void *km, const mm_mapopt_t *opt, const mm_idx_t *mi, int n_segs, const int *qlens, const char **seqs, mm128_v *mv)
 {
 	int i, n, sum = 0;
@@ -80,12 +91,28 @@ static void collect_minimizers(void *km, const mm_mapopt_t *opt, const mm_idx_t 
 KSORT_INIT(heap, mm128_t, heap_lt)
 
 typedef struct {
-	uint32_t n;
-	uint32_t q_pos, q_span;
+	uint32_t n; // cr的元素数目
+	uint32_t q_pos, q_span; // q_pos 是query minimizer的位置信息（也就是m128_t中的y）； q_span是query minimizer的x的低8位
 	uint32_t seg_id:31, is_tandem:1;
-	const uint64_t *cr;
+	const uint64_t *cr; // cr是查到的index中的位置信息，相当于m128_t中的y
 } mm_match_t;
 
+/**
+ * 从索引中找到输入的minimizer精确匹配的位置
+ *
+ * @param km            内存池
+ * @param _n_m          表示返回的mm_match_t数组的长度，因为有不满足max_occ的minimizer，所以_n_m的值不一定等于输入的minimizer的数量（mv->n）
+ * @param max_occ       频率超过本值的minimizer不计入查询结果
+ * @param mi            索引
+ * @param mv            输入的待查表的minimizer（querry minimizer）
+ * @param n_a           输入的minimizer 找到的匹配位置的数目的总和
+ * @param rep_len       ??? 猜测是记录的不满足max_occ的minimizer的span信息
+ * @param n_mini_pos    记录mini_pos数组的大小
+ * @param mini_pos      记录querry minimizer的span（高32bit）和pos（低32bit），同样不满足max_occ的除外
+ *
+ * @return 动态数组，保存查询的结果
+ *
+ * */
 static mm_match_t *collect_matches(void *km, int *_n_m, int max_occ, const mm_idx_t *mi, const mm128_v *mv, int64_t *n_a, int *rep_len, int *n_mini_pos, uint64_t **mini_pos)
 {
 	int rep_st = 0, rep_en = 0, n_m;
@@ -93,13 +120,13 @@ static mm_match_t *collect_matches(void *km, int *_n_m, int max_occ, const mm_id
 	mm_match_t *m;
 	*n_mini_pos = 0;
 	*mini_pos = (uint64_t*)kmalloc(km, mv->n * sizeof(uint64_t));
-	m = (mm_match_t*)kmalloc(km, mv->n * sizeof(mm_match_t));
+	m = (mm_match_t*)kmalloc(km, mv->n * sizeof(mm_match_t)); // mv->n个minimizer，但是不一定有mv->n个mm_match_t对象，存在频率超过max_occ的minimizer不计入结果。
 	for (i = 0, n_m = 0, *rep_len = 0, *n_a = 0; i < mv->n; ++i) {
 		const uint64_t *cr;
-		mm128_t *p = &mv->a[i];
-		uint32_t q_pos = (uint32_t)p->y, q_span = p->x & 0xff;
+		mm128_t *p = &mv->a[i]; // p 指向query minimizer
+		uint32_t q_pos = (uint32_t)p->y, q_span = p->x & 0xff; // query minimizer position
 		int t;
-		cr = mm_idx_get(mi, p->x>>8, &t);
+		cr = mm_idx_get(mi, p->x>>8, &t); // p->x>>8 是minimizer的hash值
 		if (t >= max_occ) {
 			int en = (q_pos >> 1) + 1, st = en - q_span;
 			if (st > rep_en) {
@@ -155,8 +182,8 @@ static mm128_t *collect_seed_hits_heap(void *km, const mm_mapopt_t *opt, int max
 
 	m = collect_matches(km, &n_m, max_occ, mi, mv, n_a, rep_len, n_mini_pos, mini_pos);
 
-	heap = (mm128_t*)kmalloc(km, n_m * sizeof(mm128_t));
-	a = (mm128_t*)kmalloc(km, *n_a * sizeof(mm128_t));
+	heap = (mm128_t*)kmalloc(km, n_m * sizeof(mm128_t)); // n_m是m的元素数目
+	a = (mm128_t*)kmalloc(km, *n_a * sizeof(mm128_t)); // n_a是m个match_t比对到的位置的总数
 
 	for (i = 0, heap_size = 0; i < n_m; ++i) {
 		if (m[i].n > 0) {
@@ -165,7 +192,7 @@ static mm128_t *collect_seed_hits_heap(void *km, const mm_mapopt_t *opt, int max
 			++heap_size;
 		}
 	}
-	ks_heapmake_heap(heap_size, heap);
+	ks_heapmake_heap(heap_size, heap); // 按照元素中x的大小建堆
 	while (heap_size > 0) {
 		mm_match_t *q = &m[heap->y>>32];
 		mm128_t *p;
@@ -270,7 +297,7 @@ static mm_reg1_t *align_regs(const mm_mapopt_t *opt, const mm_idx_t *mi, void *k
 
 
 /**
- *
+ * 一次处理一个frag，frag指的是原来一整条read被分成了几条read分开保存
  * */
 void mm_map_frag(const mm_idx_t *mi, int n_segs, const int *qlens, const char **seqs, int *n_regs, mm_reg1_t **regs, mm_tbuf_t *b, const mm_mapopt_t *opt, const char *qname)
 {
@@ -294,9 +321,12 @@ void mm_map_frag(const mm_idx_t *mi, int n_segs, const int *qlens, const char **
 	hash ^= __ac_Wang_hash(qlen_sum) + __ac_Wang_hash(opt->seed);
 	hash  = __ac_Wang_hash(hash);
 
-	collect_minimizers(b->km, opt, mi, n_segs, qlens, seqs, &mv);
-	if (opt->flag & MM_F_HEAP_SORT) a = collect_seed_hits_heap(b->km, opt, opt->mid_occ, mi, qname, &mv, qlen_sum, &n_a, &rep_len, &n_mini_pos, &mini_pos);
-	else a = collect_seed_hits(b->km, opt, opt->mid_occ, mi, qname, &mv, qlen_sum, &n_a, &rep_len, &n_mini_pos, &mini_pos);
+	// 1. seed
+	collect_minimizers(b->km, opt, mi, n_segs, qlens, seqs, &mv); // 把本次处理的frag的几条序列整理成一条read，然后生成minimizer。
+	if (opt->flag & MM_F_HEAP_SORT)
+	    a = collect_seed_hits_heap(b->km, opt, opt->mid_occ, mi, qname, &mv, qlen_sum, &n_a, &rep_len, &n_mini_pos, &mini_pos);
+	else
+	    a = collect_seed_hits(b->km, opt, opt->mid_occ, mi, qname, &mv, qlen_sum, &n_a, &rep_len, &n_mini_pos, &mini_pos);
 
 	if (mm_dbg_flag & MM_DBG_PRINT_SEED) {
 		fprintf(stderr, "RS\t%d\n", rep_len);
@@ -305,6 +335,7 @@ void mm_map_frag(const mm_idx_t *mi, int n_segs, const int *qlens, const char **
 					i == 0? 0 : ((int32_t)a[i].y - (int32_t)a[i-1].y) - ((int32_t)a[i].x - (int32_t)a[i-1].x));
 	}
 
+	// 2. chain
 	// set max chaining gap on the query and the reference sequence
 	if (is_sr)
 		max_chain_gap_qry = qlen_sum > opt->max_gap? qlen_sum : opt->max_gap;
@@ -355,6 +386,7 @@ void mm_map_frag(const mm_idx_t *mi, int n_segs, const int *qlens, const char **
 	chain_post(opt, max_chain_gap_ref, mi, b->km, qlen_sum, n_segs, qlens, &n_regs0, regs0, a);
 	if (!is_sr) mm_est_err(mi, qlen_sum, n_regs0, regs0, a, n_mini_pos, mini_pos);
 
+	// 3. extend
 	if (n_segs == 1) { // uni-segment
 		regs0 = align_regs(opt, mi, b->km, qlens[0], seqs[0], &n_regs0, regs0, a);
 		mm_set_mapq(b->km, n_regs0, regs0, opt->min_chain_score, opt->a, rep_len, is_sr);

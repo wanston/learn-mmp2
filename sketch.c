@@ -110,7 +110,7 @@ void mm_sketch(void *km, const char *str, int len, int w, int k, uint32_t rid, i
 			++l;
 			if (l >= k && kmer_span < 256) {
 				info.x = hash64(kmer[z], mask) << 8 | kmer_span;
-				info.y = (uint64_t)rid<<32 | (uint32_t)i<<1 | z;
+				info.y = (uint64_t)rid<<32 | (uint32_t)i<<1 | z; // rid 是序列的编号 i是minimizer的位置 z是正反链标志
 			}
 		} else l = 0, tq.count = tq.front = 0, kmer_span = 0;
 		buf[buf_pos] = info; // need to do this here as appropriate buf_pos and buf[buf_pos] are needed below
