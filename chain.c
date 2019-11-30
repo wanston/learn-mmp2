@@ -19,6 +19,25 @@ static inline int ilog2_32(uint32_t v)
 	return (t = v>>8) ? 8 + LogTable256[t] : LogTable256[v];
 }
 
+
+/**
+ * chain的核心函数，输入是read的minimizers在ref上的精确比对的位置。
+ *
+ * @param max_dist_x 		max_chain_gap_ref
+ * @param max_dist_y 		max_chain_gap_qry
+ * @param bw				bindwidth
+ * @param max_skip
+ * @param max_iter
+ * @param min_cnt			min number of minimizers on each chain
+ * @param min_sc			min chaining score
+ * @param is_cdna
+ * @param n_segs			是从mm_map_frag中调用的该函数，n_seg表示frag被分为了几段（segment）
+ * @param n					a的元素数目
+ * @param a					minimizers的精确比对的结果
+ * @param n_u_
+ * @param _u
+ * @param km				内存池
+ * */
 mm128_t *mm_chain_dp(int max_dist_x, int max_dist_y, int bw, int max_skip, int max_iter, int min_cnt, int min_sc, int is_cdna, int n_segs, int64_t n, mm128_t *a, int *n_u_, uint64_t **_u, void *km)
 { // TODO: make sure this works when n has more than 32 bits
 	int32_t k, *f, *p, *t, *v, n_u, n_v;
@@ -38,8 +57,8 @@ mm128_t *mm_chain_dp(int max_dist_x, int max_dist_y, int bw, int max_skip, int m
 	v = (int32_t*)kmalloc(km, n * 4);
 	memset(t, 0, n * 4);
 
-	for (i = 0; i < n; ++i) sum_qspan += a[i].y>>32&0xff;
-	avg_qspan = (float)sum_qspan / n;
+	for (i = 0; i < n; ++i) sum_qspan += a[i].y>>32&0xff; // sum_span是所有minimizer比对结果的span的和
+	avg_qspan = (float)sum_qspan / n; // 基本上是kmer的长度，还没见过其他的情况
 
 	// fill the score and backtrack arrays
 	for (i = 0; i < n; ++i) {

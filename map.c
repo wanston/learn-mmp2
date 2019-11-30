@@ -92,7 +92,7 @@ KSORT_INIT(heap, mm128_t, heap_lt)
 
 typedef struct {
 	uint32_t n; // cr的元素数目
-	uint32_t q_pos, q_span; // q_pos 是query minimizer的位置信息（也就是m128_t中的y）； q_span是query minimizer的x的低8位
+	uint32_t q_pos, q_span; // q_pos 是query minimizer的位置信息（也就是m128_t中的y中的低32bit）； q_span的值是query minimizer的x的低8位
 	uint32_t seg_id:31, is_tandem:1;
 	const uint64_t *cr; // cr是查到的index中的位置信息，相当于m128_t中的y
 } mm_match_t;
@@ -172,6 +172,28 @@ static inline int skip_seed(int flag, uint64_t r, const mm_match_t *q, const cha
 	return 0;
 }
 
+/**
+ * 输入索引和某条read生成的minimizers，查索引，返回这些minimizers的匹配结果。
+ *
+ * @param km            内存池
+ * @param opt           配置选项
+ * @param max_occ       在collect_matches中用到，用于过滤掉高频（比对位置超过max_occ）的种子
+ * @param mi            索引
+ * @param q_name        minimizers所属read的名字
+ * @param mv            minimizers
+ * @param qlen          minimizers所属read的长度
+ * @param n_a           返回的动态数组的size，也就是minimizers比对到的所有位置的总数
+ * @param rep_len
+ * @param n_mini_pos    mini_pos的size
+ * @param mini_pos
+ *
+ * @return  动态数组，每个元素记录的是一个比对位置。需要注意的是每个minimizer有多个比对位置，返回的动态数组
+ *          里面把这些比对位置收集起来，按照比对到的链的正反，比对到的染色体序号，在染色体上的位置进行排序。
+ *          m128_t中的
+ *          x：最高bit位表示正反链（0正1反），接下来的31bit表示染色体序号，最低的32bit表示比对到的染色体的
+ *          位置；
+ *          y：高32bit表示query minimizer的span，低32bit表示query minimizer在read上的位置。
+ * */
 static mm128_t *collect_seed_hits_heap(void *km, const mm_mapopt_t *opt, int max_occ, const mm_idx_t *mi, const char *qname, const mm128_v *mv, int qlen, int64_t *n_a, int *rep_len,
 								  int *n_mini_pos, uint64_t **mini_pos)
 {
@@ -182,10 +204,11 @@ static mm128_t *collect_seed_hits_heap(void *km, const mm_mapopt_t *opt, int max
 
 	m = collect_matches(km, &n_m, max_occ, mi, mv, n_a, rep_len, n_mini_pos, mini_pos);
 
-	heap = (mm128_t*)kmalloc(km, n_m * sizeof(mm128_t)); // n_m是m的元素数目
+	heap = (mm128_t*)kmalloc(km, n_m * sizeof(mm128_t)); // n_m是m的元素数目，n_m是有比对结果的minimizer的数目
 	a = (mm128_t*)kmalloc(km, *n_a * sizeof(mm128_t)); // n_a是m个match_t比对到的位置的总数
 
-	// heap 仅仅根据每个minimizer的第一个查询结果排序
+	// heap 仅仅根据每个minimizer的第一个比对结果排序（也就是m128_t中的y），排序后，会让
+	// heap存储每个query minimizer的第一个比对结果
 	for (i = 0, heap_size = 0; i < n_m; ++i) {
 		if (m[i].n > 0) {
 			heap[heap_size].x = m[i].cr[0];
@@ -195,26 +218,28 @@ static mm128_t *collect_seed_hits_heap(void *km, const mm_mapopt_t *opt, int max
 	}
 	ks_heapmake_heap(heap_size, heap); // 按照元素中x的大小建堆
 	while (heap_size > 0) {
-		mm_match_t *q = &m[heap->y>>32];
+		mm_match_t *q = &m[heap->y>>32]; // q指向堆顶元素的mm_match_t对象
 		mm128_t *p;
-		uint64_t r = heap->x;
-		int32_t is_self, rpos = (uint32_t)r >> 1;
+		uint64_t r = heap->x; // r是堆顶元素的mm_match_t对象的第一个比对结果（m128_t中的y）
+		int32_t is_self, rpos = (uint32_t)r >> 1; // rpos只含y中的pos信息（即minimizer在ref中的位置）
+		// 下面if中做的就是按照heap的顺序
 		if (!skip_seed(opt->flag, r, q, qname, qlen, mi, &is_self)) { // ???
-			if ((r&1) == (q->q_pos&1)) { // forward strand
+			if ((r&1) == (q->q_pos&1)) { // forward strand，如果堆顶元素的第一个比对结果和堆顶的minimizer的链正反相同
 				p = &a[n_for++];
-				p->x = (r&0xffffffff00000000ULL) | rpos;
-				p->y = (uint64_t)q->q_span << 32 | q->q_pos >> 1;
+				p->x = (r&0xffffffff00000000ULL) | rpos; // x保存比对结果的序列ID（高32bit）、位置（低32bit）
+				p->y = (uint64_t)q->q_span << 32 | q->q_pos >> 1; // y保存query minimizer的span（高32bit）、位置（低32bit）
 			} else { // reverse strand
 				p = &a[(*n_a) - (++n_rev)];
-				p->x = 1ULL<<63 | (r&0xffffffff00000000ULL) | rpos;
-				p->y = (uint64_t)q->q_span << 32 | (qlen - ((q->q_pos>>1) + 1 - q->q_span) - 1);
+				p->x = 1ULL<<63 | (r&0xffffffff00000000ULL) | rpos; // x最高位标记了比对结果是正链还是反链
+				p->y = (uint64_t)q->q_span << 32 | (qlen - ((q->q_pos>>1) + 1 - q->q_span) - 1); // y的位置要经过坐标变换
 			}
+			// 其实y中的span信息最多用8位（span表示kmer的长度），也就是span表示的最大值是256。
 			p->y |= (uint64_t)q->seg_id << MM_SEED_SEG_SHIFT;
 			if (q->is_tandem) p->y |= MM_SEED_TANDEM;
 			if (is_self) p->y |= MM_SEED_SELF;
 		}
-		// update the heap
-		if ((uint32_t)heap->y < q->n - 1) {
+		// update the heap，
+		if ((uint32_t)heap->y < q->n - 1) { // 因为一个minimizer有多个比对结果，这里的两行代码就是用于处理这多个比对结果的。y的低32bit用于处理过的本minimizer比对结果的个数
 			++heap[0].y;
 			heap[0].x = m[heap[0].y>>32].cr[(uint32_t)heap[0].y];
 		} else {
@@ -225,13 +250,15 @@ static mm128_t *collect_seed_hits_heap(void *km, const mm_mapopt_t *opt, int max
 	}
 	kfree(km, m);
 	kfree(km, heap);
+	// 运行到此处时，a中头部存储的按照序列编号、位置排序好的minimizer的正链比对结果，数目为n_for；尾部存储的是反链存储结果数目为n_rev。
 
-	// reverse anchors on the reverse strand, as they are in the descending order
+	// reverse anchors on the reverse strand, as they are in the descending order，从前向后遍历的话，a的头部是升序，a的尾部是降序。这里把a的尾部反转成升序。
 	for (j = 0; j < n_rev>>1; ++j) {
 		mm128_t t = a[(*n_a) - 1 - j];
 		a[(*n_a) - 1 - j] = a[(*n_a) - (n_rev - j)];
 		a[(*n_a) - (n_rev - j)] = t;
 	}
+	// 把a的尾部的数据拷贝到头部数据后面，消除中间的空隙。
 	if (*n_a > n_for + n_rev) {
 		memmove(a + n_for, a + (*n_a) - n_rev, n_rev * sizeof(mm128_t));
 		*n_a = n_for + n_rev;
@@ -239,6 +266,11 @@ static mm128_t *collect_seed_hits_heap(void *km, const mm_mapopt_t *opt, int max
 	return a;
 }
 
+
+/**
+ * 和 collect_seed_hits_heap 函数的功能相同，唯一的不同是：
+ * 在排序匹配结果的时候，前者使用的是堆排序，本函数采用的是？？排序
+ * */
 static mm128_t *collect_seed_hits(void *km, const mm_mapopt_t *opt, int max_occ, const mm_idx_t *mi, const char *qname, const mm128_v *mv, int qlen, int64_t *n_a, int *rep_len,
 								  int *n_mini_pos, uint64_t **mini_pos)
 {
@@ -298,7 +330,18 @@ static mm_reg1_t *align_regs(const mm_mapopt_t *opt, const mm_idx_t *mi, void *k
 
 
 /**
- * 一次处理一个frag，frag指的是原来一整条read被分成了几条read分开保存
+ * 序列比对的核心函数，输入一个frag和索引，打印出比对的结果。frag指的是原本有一整条read，但是被切分成了多条read来记录在fastq文件中，
+ * 这些切分后的read的名字是原本的read名字后面加上"/0" "/1" "/2" ...的后缀。这些切分后的read合起来被被称为frag。
+ *
+ * @param mi            索引
+ * @param n_segs        本frag中read的数目
+ * @param qlens         数组，read的长度
+ * @param seqs          数组，read
+ * @param n_regs        ？？？
+ * @param regs          ？？？
+ * @param b             ？？？
+ * @param opt           配置选项
+ * @param qname         frag的名字，即read的名字去掉后缀
  * */
 void mm_map_frag(const mm_idx_t *mi, int n_segs, const int *qlens, const char **seqs, int *n_regs, mm_reg1_t **regs, mm_tbuf_t *b, const mm_mapopt_t *opt, const char *qname)
 {
@@ -324,7 +367,7 @@ void mm_map_frag(const mm_idx_t *mi, int n_segs, const int *qlens, const char **
 
 	// 1. seed
 	collect_minimizers(b->km, opt, mi, n_segs, qlens, seqs, &mv); // 把本次处理的frag的几条序列整理成一条read，然后生成minimizer。
-	if (opt->flag & MM_F_HEAP_SORT)
+	if (opt->flag & MM_F_HEAP_SORT) // -ax sr会执行heap_sort
 	    a = collect_seed_hits_heap(b->km, opt, opt->mid_occ, mi, qname, &mv, qlen_sum, &n_a, &rep_len, &n_mini_pos, &mini_pos);
 	else
 	    a = collect_seed_hits(b->km, opt, opt->mid_occ, mi, qname, &mv, qlen_sum, &n_a, &rep_len, &n_mini_pos, &mini_pos);
@@ -337,9 +380,9 @@ void mm_map_frag(const mm_idx_t *mi, int n_segs, const int *qlens, const char **
 	}
 
 	// 2. chain
-	// set max chaining gap on the query and the reference sequence
+	// set max chaining gap on the query and the reference sequence，下面的几行逻辑计算max_chain_gap_qry和max_chain_gap_ref
 	if (is_sr)
-		max_chain_gap_qry = qlen_sum > opt->max_gap? qlen_sum : opt->max_gap;
+		max_chain_gap_qry = qlen_sum > opt->max_gap? qlen_sum : opt->max_gap; // max_gap是100
 	else max_chain_gap_qry = opt->max_gap;
 	if (opt->max_gap_ref > 0) {
 		max_chain_gap_ref = opt->max_gap_ref; // always honor mm_mapopt_t::max_gap_ref if set
