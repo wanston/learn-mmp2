@@ -122,7 +122,8 @@ void mm_sketch(void *km, const char *str, int len, int w, int k, uint32_t rid, i
 		}
 		// 下面的逻辑就是存储旧的（前一个窗口的）minimizer，然后计算当前窗口的minimizer
 		if (info.x <= min.x) { // 新的kmer小于前面窗口的minimizer，a new minimum; then write the old min
-			if (l >= w + k && min.x != UINT64_MAX) kv_push(mm128_t, km, *p, min); // 存储旧的minimizer，只有在遍历过第一个窗口后（此时min表示前面窗口的minmimizer），才把前面窗口的minimizer保存
+			if (l >= w + k && min.x != UINT64_MAX)
+			    kv_push(mm128_t, km, *p, min); // 存储旧的minimizer，只有在遍历过第一个窗口后（此时min表示前面窗口的minmimizer），才把前面窗口的minimizer保存
 			min = info, min_pos = buf_pos;
 		} else if (buf_pos == min_pos) { // old min has moved outside the window，此时需要计算出当前窗口的minimizer，因为minimizer有更新。（minimizer减少存储的一大原因就是多个window共享同一minimizer）
 			if (l >= w + k - 1 && min.x != UINT64_MAX) kv_push(mm128_t, km, *p, min); // 存储旧的minimizer

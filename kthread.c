@@ -51,6 +51,14 @@ static void *ktf_worker(void *data)
 	pthread_exit(0);
 }
 
+/**
+ * 多线程运行，func函数n次，data和i作为func函数的参数，其中i表示第几次运行func函数。
+ *
+ * @param n_threads
+ * @param func
+ * @param data
+ * @param n
+ */
 void kt_for(int n_threads, void (*func)(void*,long,int), void *data, long n)
 {
 	if (n_threads > 1) {

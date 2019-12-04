@@ -24,9 +24,23 @@ KHASH_MAP_INIT_STR(str, uint32_t)
 
 #define kroundup64(x) (--(x), (x)|=(x)>>1, (x)|=(x)>>2, (x)|=(x)>>4, (x)|=(x)>>8, (x)|=(x)>>16, (x)|=(x)>>32, ++(x))
 
+
+/**
+ * 关键的索引结构
+ * a    (minimizer, position) array，fasta序列生成的mm128_t结构体存放于此，存放于此的只是所有(minmizer, position)的一部分。
+ *      当p、h建立好之后，(minimizer，position)就会存在p、h中，此后a的内容就会变空。
+ * n    position array的大小
+ * p    position array，记录的是出现次数大于一次的minimizer的position；同一minimizer的positions被升序连续存放，并且minimizer
+ *      之间也是升序的。比如，minimizer 1 的位置有77 89， minimizer 2的位置有35 70，那么position数组的内容就是77、89、35、70。
+ * h    哈希表，int64_t到int64_t的映射
+ *      key:  高63bit：mm128_t::x>>8>>mi->b<<1，低1bit：表示minimizer是否仅出现一次。
+ *      val:  如果minimizer仅出现一次，val记录的是minimizer的position，即mm128_t::y；
+ *            如果minimizer出现多次，position则有多个值，存储在p中，此时val的高32bit是position在p中的起始索引，低32bit是position的数目。
+ *      由于该哈希表的实现，key的最低1bit不影响key的hash的结果。
+ * */
 typedef struct mm_idx_bucket_s {
-	mm128_v a;   // (minimizer, position) array
-	int32_t n;   // size of the _p_ array
+	mm128_v a;
+	int32_t n;   // size of the _p_ array。
 	uint64_t *p; // position array for minimizers appearing >1 times
 	void *h;     // hash table indexing _p_ and minimizers appearing once
 } mm_idx_bucket_t;
@@ -179,8 +193,10 @@ int32_t mm_idx_cal_max_occ(const mm_idx_t *mi, float f)
 
 /*********************************
  * Sort and generate hash tables *
+ * 此函数仅仅处理mi中的一个bucket，bucket的所在数组的索引是i。该函数负责
+ * 把bucket中的a中的（minimizer, position）信息存入到bucket的h和p中。
  *
- * @param g 		实际为mm_idx_t* mi,指向要处理的表示索引的数据结构
+ * @param g 		实际为mm_idx_t* mi,指向要处理的表示索引的数据结构，此时fasta序列已经生成为mm128_t存入mi的各个bucket中。
  * @param i 		用作mi->B[i]，本函数只处理该bucket
  * @param tid		线程id
  *********************************/
@@ -194,10 +210,11 @@ static void worker_post(void *g, long i, int tid)
 	mm_idx_bucket_t *b = &mi->B[i];
 	if (b->a.n == 0) return;
 
-	// sort by minimizer
+	// sort by minimizer，升序排序，根据mm128_t的x比较大小
 	radix_sort_128x(b->a.a, b->a.a + b->a.n);
 
-	// count and preallocate
+	// count and preallocate，该段代码执行后，b->n记录存在重复的minimizer的总数，n_keys则统计bucket中不重复的minimizer有几种。
+	// 比如说，bucket中的(minimizer,pos)，是(1,x) (1,y) (2,z) (3,a) (3,b)，那么，b->n的值就是2+2=4，n_keys的值是3。
 	for (j = 1, n = 1, n_keys = 0, b->n = 0; j <= b->a.n; ++j) {
 		if (j == b->a.n || b->a.a[j].x>>8 != b->a.a[j-1].x>>8) {
 			++n_keys;
@@ -265,6 +282,11 @@ typedef struct {
 	mm128_v a; // 元素为128bit数据的vector，用于保存由seq计算出的minimizer。
 } step_t; // 用于存储每一step中处理的序列，也就是一个batch的序列
 
+
+/**
+ * 把数组a中的mm128_t元素添加进mi中对应的bucket。
+ * bucket的确定根据minimizer的哈希值的低b位。
+ * */
 static void mm_idx_add(mm_idx_t *mi, int n, const mm128_t *a)
 {
 	int i, mask = (1<<mi->b) - 1;

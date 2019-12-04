@@ -61,7 +61,7 @@ static int mm_dust_minier(void *km, int n, mm128_t *a, int l_seq, const char *se
 }
 
 /**
- * 从n_segs条序列中生成minimizer，存入到mv中。
+ * 从n_segs条序列中生成minimizer，存入到mv中。minimizer的顺序是minimizer取决于该minimizer在序列中的位置。
  *
  * @param km        内存池
  * @param opt
@@ -93,12 +93,12 @@ KSORT_INIT(heap, mm128_t, heap_lt)
 typedef struct {
 	uint32_t n; // cr的元素数目
 	uint32_t q_pos, q_span; // q_pos 是query minimizer的位置信息（也就是m128_t中的y中的低32bit）； q_span的值是query minimizer的x的低8位
-	uint32_t seg_id:31, is_tandem:1;
+	uint32_t seg_id:31, is_tandem:1; // seg_id表示, is_tandem表示该match结果对应的query minimizer和 前一个和后一个 query minimizer相同
 	const uint64_t *cr; // cr是查到的index中的位置信息，相当于m128_t中的y
 } mm_match_t;
 
 /**
- * 从索引中找到输入的minimizer精确匹配的位置
+ * 从索引中找到输入的minimizer精确匹配的位置，输出的mm_match_t的顺序取决于输入的minimizer的顺序。
  *
  * @param km            内存池
  * @param _n_m          表示返回的mm_match_t数组的长度，因为有不满足max_occ的minimizer，所以_n_m的值不一定等于输入的minimizer的数量（mv->n）
@@ -173,7 +173,7 @@ static inline int skip_seed(int flag, uint64_t r, const mm_match_t *q, const cha
 }
 
 /**
- * 输入索引和某条read生成的minimizers，查索引，返回这些minimizers的匹配结果。
+ * 一次处理一条read，输入索引和该read生成的minimizers，查索引，返回这些minimizers的匹配结果。
  *
  * @param km            内存池
  * @param opt           配置选项
@@ -188,11 +188,12 @@ static inline int skip_seed(int flag, uint64_t r, const mm_match_t *q, const cha
  * @param mini_pos
  *
  * @return  动态数组，每个元素记录的是一个比对位置。需要注意的是每个minimizer有多个比对位置，返回的动态数组
- *          里面把这些比对位置收集起来，按照比对到的链的正反，比对到的染色体序号，在染色体上的位置进行排序。
+ *          里面把这些比对位置收集起来，按照read的正反，比对到的染色体序号，在染色体上的位置进行排序。
  *          m128_t中的
- *          x：最高bit位表示正反链（0正1反），接下来的31bit表示染色体序号，最低的32bit表示比对到的染色体的
- *          位置；
- *          y：高32bit表示query minimizer的span，低32bit表示query minimizer在read上的位置。
+ *          x：记录ref信息，最高bit位表示read的正反链（0正1反），而非ref的正反链，接下来的31bit表示染色体序号，最低的32bit表示比对到的染色体的位置（kmer的最后1bp在ref上的索引，从0开始）；
+ *          y：记录query minimizer信息，高32bit记录了表示query minimizer的seg_id, is_tandem，span，低32bit表示query minimizer在read上的位置。
+ *
+ *          关于正反链多说一句，如果x的最高位是1，那么就表示：将read反向互补后，比对到正向ref的某位置。
  * */
 static mm128_t *collect_seed_hits_heap(void *km, const mm_mapopt_t *opt, int max_occ, const mm_idx_t *mi, const char *qname, const mm128_v *mv, int qlen, int64_t *n_a, int *rep_len,
 								  int *n_mini_pos, uint64_t **mini_pos)
@@ -223,7 +224,7 @@ static mm128_t *collect_seed_hits_heap(void *km, const mm_mapopt_t *opt, int max
 		uint64_t r = heap->x; // r是堆顶元素的mm_match_t对象的第一个比对结果（m128_t中的y）
 		int32_t is_self, rpos = (uint32_t)r >> 1; // rpos只含y中的pos信息（即minimizer在ref中的位置）
 		// 下面if中做的就是按照heap的顺序
-		if (!skip_seed(opt->flag, r, q, qname, qlen, mi, &is_self)) { // ???
+		if (!skip_seed(opt->flag, r, q, qname, qlen, mi, &is_self)) { // ??? 以一定的标准判断是否采纳该seed的match的结果
 			if ((r&1) == (q->q_pos&1)) { // forward strand，如果堆顶元素的第一个比对结果和堆顶的minimizer的链正反相同
 				p = &a[n_for++];
 				p->x = (r&0xffffffff00000000ULL) | rpos; // x保存比对结果的序列ID（高32bit）、位置（低32bit）
@@ -330,8 +331,9 @@ static mm_reg1_t *align_regs(const mm_mapopt_t *opt, const mm_idx_t *mi, void *k
 
 
 /**
- * 序列比对的核心函数，输入一个frag和索引，打印出比对的结果。frag指的是原本有一整条read，但是被切分成了多条read来记录在fastq文件中，
- * 这些切分后的read的名字是原本的read名字后面加上"/0" "/1" "/2" ...的后缀。这些切分后的read合起来被被称为frag。
+ * 序列比对的核心函数，一次处理一个frag（也就是read），打印出map的结果。frag指的是原本有一整条read，但是被切分
+ * 成了多条read来记录在fastq文件中，这些切分后的read的名字是原本的read名字后面加上"/0" "/1""/2" ...的后缀。
+ * 这些切分后的read合起来被被称为frag。
  *
  * @param mi            索引
  * @param n_segs        本frag中read的数目
@@ -499,8 +501,12 @@ typedef struct {
 } step_t;
 
 /**
- * @param i			单线程下，表示第几次运行的此函数
- * */
+ * map一个frag，要map的frag是_data中的第i个frag。
+ *
+ * @param _data
+ * @param i
+ * @param tid
+ */
 static void worker_for(void *_data, long i, int tid) // kt_for() callback
 {
     step_t *s = (step_t*)_data;
@@ -512,7 +518,7 @@ static void worker_for(void *_data, long i, int tid) // kt_for() callback
 		fprintf(stderr, "QR\t%s\t%d\t%d\n", s->seq[off].name, tid, s->seq[off].l_seq);
 
 	// 把本次处理的frag（多条seq）放到qlens qseqs中，TODO:: pe_ori是啥？
-	for (j = 0; j < s->n_seg[i]; ++j) {
+	for (j = 0; j < s->n_seg[i]; ++j) { // s->n_seg记录的是每个frag含有几条seqs（即segments）。
 		if (s->n_seg[i] == 2 && ((j == 0 && (pe_ori>>1&1)) || (j == 1 && (pe_ori&1))))
 			mm_revcomp_bseq(&s->seq[off + j]);
 		qlens[j] = s->seq[off + j].l_seq;
