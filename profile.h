@@ -32,7 +32,7 @@
         name##_cost[pro_tid] += name##_end.tv_sec - name##_start.tv_sec + (name##_end.tv_nsec - name##_start.tv_nsec) / 1e9;
 
 #define PROFILE_REPORT(name) \
-        int name##_i;
+        int name##_i; \
         for(name##_i=0; name##_i<PROFILE_THREAD_NUM; name##_i++){ \
             name##_cost_sum += name##_cost[name##_i]; \
         } \
