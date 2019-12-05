@@ -22,6 +22,14 @@ void liftrlimit()
 void liftrlimit() {}
 #endif
 
+/***ADD BY WangTong***/
+#include "profile.h"
+PROFILE_INIT0;
+PROFILE_INIT(seed);
+PROFILE_INIT(chain);
+PROFILE_INIT(extend);
+/*********************/
+
 static ko_longopt_t long_options[] = {
 	{ "bucket-bits",    ko_required_argument, 300 },
 	{ "mb-size",        ko_required_argument, 'K' },
@@ -389,5 +397,9 @@ int main(int argc, char *argv[])
 			fprintf(stderr, " %s", argv[i]);
 		fprintf(stderr, "\n[M::%s] Real time: %.3f sec; CPU: %.3f sec; Peak RSS: %.3f GB\n", __func__, realtime() - mm_realtime0, cputime(), peakrss() / 1024.0 / 1024.0 / 1024.0);
 	}
+
+	PROFILE_REPORT(seed);
+	PROFILE_REPORT(chain);
+	PROFILE_REPORT(extend);
 	return 0;
 }

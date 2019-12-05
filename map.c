@@ -8,6 +8,7 @@
 #include "mmpriv.h"
 #include "bseq.h"
 #include "khash.h"
+#include "profile.h"
 
 struct mm_tbuf_s {
 	void *km;
@@ -331,7 +332,7 @@ static mm_reg1_t *align_regs(const mm_mapopt_t *opt, const mm_idx_t *mi, void *k
 
 
 /**
- * 序列比对的核心函数，一次处理一个frag（也就是read），打印出map的结果。frag指的是原本有一整条read，但是被切分
+ * 序列比对的核心函数，一次处理一个frag（也就是read）。frag指的是原本有一整条read，但是被切分
  * 成了多条read来记录在fastq文件中，这些切分后的read的名字是原本的read名字后面加上"/0" "/1""/2" ...的后缀。
  * 这些切分后的read合起来被被称为frag。
  *
@@ -367,6 +368,9 @@ void mm_map_frag(const mm_idx_t *mi, int n_segs, const int *qlens, const char **
 	hash ^= __ac_Wang_hash(qlen_sum) + __ac_Wang_hash(opt->seed);
 	hash  = __ac_Wang_hash(hash);
 
+	/************/
+    PROFILE_START(seed);
+    /************/
 	// 1. seed
 	collect_minimizers(b->km, opt, mi, n_segs, qlens, seqs, &mv); // 把本次处理的frag的几条序列整理成一条read，然后生成minimizer。
 	if (opt->flag & MM_F_HEAP_SORT) // -ax sr会执行heap_sort
@@ -380,9 +384,15 @@ void mm_map_frag(const mm_idx_t *mi, int n_segs, const int *qlens, const char **
 			fprintf(stderr, "SD\t%s\t%d\t%c\t%d\t%d\t%d\n", mi->seq[a[i].x<<1>>33].name, (int32_t)a[i].x, "+-"[a[i].x>>63], (int32_t)a[i].y, (int32_t)(a[i].y>>32&0xff),
 					i == 0? 0 : ((int32_t)a[i].y - (int32_t)a[i-1].y) - ((int32_t)a[i].x - (int32_t)a[i-1].x));
 	}
+    /************/
+    PROFILE_END(seed);
+    /************/
 
 	// 2. chain
 	// set max chaining gap on the query and the reference sequence，下面的几行逻辑计算max_chain_gap_qry和max_chain_gap_ref
+	/************/
+	PROFILE_START(chain);
+	/************/
 	if (is_sr)
 		max_chain_gap_qry = qlen_sum > opt->max_gap? qlen_sum : opt->max_gap; // max_gap是100
 	else max_chain_gap_qry = opt->max_gap;
@@ -431,8 +441,14 @@ void mm_map_frag(const mm_idx_t *mi, int n_segs, const int *qlens, const char **
 
 	chain_post(opt, max_chain_gap_ref, mi, b->km, qlen_sum, n_segs, qlens, &n_regs0, regs0, a);
 	if (!is_sr) mm_est_err(mi, qlen_sum, n_regs0, regs0, a, n_mini_pos, mini_pos);
+	/************/
+	PROFILE_END(chain);
+	/************/
 
 	// 3. extend
+	/************/
+	PROFILE_START(extend);
+	/************/
 	if (n_segs == 1) { // uni-segment
 		regs0 = align_regs(opt, mi, b->km, qlens[0], seqs[0], &n_regs0, regs0, a);
 		mm_set_mapq(b->km, n_regs0, regs0, opt->min_chain_score, opt->a, rep_len, is_sr);
@@ -450,6 +466,9 @@ void mm_map_frag(const mm_idx_t *mi, int n_segs, const int *qlens, const char **
 		if (n_segs == 2 && opt->pe_ori >= 0 && (opt->flag&MM_F_CIGAR))
 			mm_pair(b->km, max_chain_gap_ref, opt->pe_bonus, opt->a * 2 + opt->b, opt->a, qlens, n_regs, regs); // pairing
 	}
+	/************/
+	PROFILE_END(extend);
+	/************/
 
 	kfree(b->km, mv.a);
 	kfree(b->km, a);

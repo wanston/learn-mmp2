@@ -37,10 +37,18 @@ static inline long steal_work(kt_for_t *t)
 	return k >= t->n? -1 : k;
 }
 
+/*******/
+#include "profile.h"
+/*******/
 static void *ktf_worker(void *data)
 {
 	ktf_worker_t *w = (ktf_worker_t*)data;
 	long i;
+
+	/*******/
+	PROFILE_SET_TID(w - w->t->w);
+	/*******/
+
 	for (;;) {
 		i = __sync_fetch_and_add(&w->i, w->t->n_threads);
 		if (i >= w->t->n) break;
