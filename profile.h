@@ -15,21 +15,25 @@
 #define PROFILE_SET_TID(i) (pro_tid = (i));
 
 #define PROFILE_INIT(name) \
-        struct timespec name##_start, name##_end; \
+        struct timespec *name##_start, *name##_end; \
         double name##_cost_sum = 0.0; \
         double *name##_cost = 0;
 
 #define PROFILE_START(name) \
-        extern struct timespec name##_start, name##_end; \
+        extern struct timespec *name##_start, *name##_end; \
         extern double name##_cost_sum; \
         extern double *name##_cost; \
         if(! name##_cost) \
             name##_cost = (double*)calloc(PROFILE_THREAD_NUM, sizeof(double)); \
-        clock_gettime(CLOCK_THREAD_CPUTIME_ID, &name##_start);
+        if(! name##_start) \
+            name##_start = (struct timespec*)malloc(PROFILE_THREAD_NUM * sizeof(struct timespec)); \
+        if(! name##_end) \
+            name##_end = (struct timespec*)malloc(PROFILE_THREAD_NUM * sizeof(struct timespec)); \
+        clock_gettime(CLOCK_THREAD_CPUTIME_ID, name##_start + pro_tid);
 
 #define PROFILE_END(name) \
-        clock_gettime(CLOCK_THREAD_CPUTIME_ID, &name##_end); \
-        name##_cost[pro_tid] += name##_end.tv_sec - name##_start.tv_sec + (name##_end.tv_nsec - name##_start.tv_nsec) / 1e9;
+        clock_gettime(CLOCK_THREAD_CPUTIME_ID, name##_end + pro_tid); \
+        name##_cost[pro_tid] += name##_end[pro_tid].tv_sec - name##_start[pro_tid].tv_sec + (name##_end[pro_tid].tv_nsec - name##_start[pro_tid].tv_nsec) / 1e9;
 
 #define PROFILE_REPORT(name) \
         int name##_i; \
