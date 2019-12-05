@@ -12,11 +12,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7f57b0b1-56e6-4488-9d34-d2fe9c33aa3a" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/profile.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kthread.c" beforeDir="false" afterPath="$PROJECT_DIR$/kthread.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.c" beforeDir="false" afterPath="$PROJECT_DIR$/main.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/map.c" beforeDir="false" afterPath="$PROJECT_DIR$/map.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/profile.h" beforeDir="false" afterPath="$PROJECT_DIR$/profile.h" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/cmake-build-debug/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -97,7 +93,7 @@
         <counts>
           <entry key="GDB" value="4152" />
           <entry key="c" value="19415" />
-          <entry key="h" value="2194" />
+          <entry key="h" value="2211" />
           <entry key="txt" value="133" />
         </counts>
       </usages-collector>
@@ -106,7 +102,7 @@
           <entry key="CMakeLists.txt" value="125" />
           <entry key="Doxygen file" value="409" />
           <entry key="GDBCommands" value="4152" />
-          <entry key="ObjectiveC" value="21200" />
+          <entry key="ObjectiveC" value="21217" />
           <entry key="PLAIN_TEXT" value="8" />
         </counts>
       </usages-collector>
@@ -117,10 +113,10 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/main.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="521">
+            <state relative-caret-position="1495">
               <caret line="402" column="27" lean-forward="true" selection-start-line="402" selection-start-column="27" selection-end-line="402" selection-end-column="27" />
               <folding>
                 <element signature="e#188#213#0" expanded="true" />
@@ -160,11 +156,11 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/profile.h">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="378">
-              <caret line="21" column="21" selection-start-line="21" selection-start-column="8" selection-end-line="21" selection-end-column="21" />
+            <state relative-caret-position="432">
+              <caret line="36" column="50" selection-start-line="36" selection-start-column="50" selection-end-line="36" selection-end-column="50" />
             </state>
           </provider>
         </entry>
@@ -278,10 +274,10 @@
         <option value="$PROJECT_DIR$/记录.txt" />
         <option value="$PROJECT_DIR$/index.c" />
         <option value="$PROJECT_DIR$/sketch.c" />
-        <option value="$PROJECT_DIR$/profile.h" />
         <option value="$PROJECT_DIR$/kthread.c" />
         <option value="$PROJECT_DIR$/map.c" />
         <option value="$PROJECT_DIR$/main.c" />
+        <option value="$PROJECT_DIR$/profile.h" />
       </list>
     </option>
   </component>
@@ -404,12 +400,12 @@
       <workItem from="1561081950085" duration="143000" />
       <workItem from="1574668569385" duration="8322000" />
       <workItem from="1574753040675" duration="96100000" />
-      <workItem from="1575278473780" duration="47150000" />
+      <workItem from="1575278473780" duration="47441000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="476653000" />
+    <option name="totallyTimeSpent" value="476944000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -429,7 +425,7 @@
       <window_info id="Favorites" order="2" sideWeight="0.5015674" side_tool="true" weight="0.18036404" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.15400624" />
-      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.3912591" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.48699272" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.1394381" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -437,7 +433,7 @@
       <window_info anchor="bottom" id="TODO" order="7" weight="0.3298647" />
       <window_info anchor="bottom" id="Version Control" order="8" weight="0.3298647" />
       <window_info anchor="bottom" id="Event Log" order="9" side_tool="true" />
-      <window_info anchor="bottom" id="Terminal" order="10" weight="0.54318416" />
+      <window_info active="true" anchor="bottom" id="Terminal" order="10" visible="true" weight="0.33298647" />
       <window_info anchor="bottom" id="Messages" order="11" weight="0.3257024" />
       <window_info anchor="bottom" id="CMake" order="12" weight="0.3298647" />
       <window_info anchor="bottom" id="File Transfer" order="13" weight="0.1862643" />
@@ -862,13 +858,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/profile.h">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="378">
-          <caret line="21" column="21" selection-start-line="21" selection-start-column="8" selection-end-line="21" selection-end-column="21" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/map.c">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="169">
@@ -881,12 +870,19 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/main.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="521">
+        <state relative-caret-position="1495">
           <caret line="402" column="27" lean-forward="true" selection-start-line="402" selection-start-column="27" selection-end-line="402" selection-end-column="27" />
           <folding>
             <element signature="e#188#213#0" expanded="true" />
             <element signature="e#362#382#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/profile.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="432">
+          <caret line="36" column="50" selection-start-line="36" selection-start-column="50" selection-end-line="36" selection-end-column="50" />
         </state>
       </provider>
     </entry>
