@@ -25,10 +25,10 @@
         extern double *name##_cost; \
         if(! name##_cost) \
             name##_cost = (double*)calloc(PROFILE_THREAD_NUM, sizeof(double)); \
-        clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &name##_start);
+        clock_gettime(CLOCK_THREAD_CPUTIME_ID, &name##_start);
 
 #define PROFILE_END(name) \
-        clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &name##_end); \
+        clock_gettime(CLOCK_THREAD_CPUTIME_ID, &name##_end); \
         name##_cost[pro_tid] += name##_end.tv_sec - name##_start.tv_sec + (name##_end.tv_nsec - name##_start.tv_nsec) / 1e9;
 
 #define PROFILE_REPORT(name) \
