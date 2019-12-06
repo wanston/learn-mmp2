@@ -21,7 +21,6 @@
 
 #define PROFILE_START(name) \
         extern struct timespec *name##_start, *name##_end; \
-        extern double name##_cost_sum; \
         extern double *name##_cost; \
         if(! name##_cost) \
             name##_cost = (double*)calloc(PROFILE_THREAD_NUM, sizeof(double)); \
@@ -36,11 +35,12 @@
         name##_cost[pro_tid] += name##_end[pro_tid].tv_sec - name##_start[pro_tid].tv_sec + (name##_end[pro_tid].tv_nsec - name##_start[pro_tid].tv_nsec) / 1e9;
 
 #define PROFILE_REPORT(name) \
+        extern double name##_cost_sum; \
         int name##_i; \
         for(name##_i=0; name##_i<PROFILE_THREAD_NUM; name##_i++){ \
             name##_cost_sum += name##_cost[name##_i]; \
         } \
-        fprintf(stderr, "[WangTong Profile] CPU: %s %fsecs \n", #name, name##_cost_sum);
+        fprintf(stderr, "[WangTong Profile] CPU: %s %.3f seconds \n", #name, name##_cost_sum);
 
 extern __thread int pro_tid;
 #endif //MINIMAP2_PROFILE_H
