@@ -88,6 +88,8 @@ static void collect_minimizers(void *km, const mm_mapopt_t *opt, const mm_idx_t 
 }
 
 #include "ksort.h"
+#include "minimap.h"
+
 #define heap_lt(a, b) ((a).x > (b).x)
 KSORT_INIT(heap, mm128_t, heap_lt)
 
@@ -194,7 +196,7 @@ static inline int skip_seed(int flag, uint64_t r, const mm_match_t *q, const cha
  *          x：记录ref信息，最高bit位表示read的正反链（0正1反），而非ref的正反链，接下来的31bit表示染色体序号，最低的32bit表示比对到的染色体的位置（kmer的最后1bp在ref上的索引，从0开始）；
  *          y：记录query minimizer信息，高32bit记录了表示query minimizer的seg_id, is_tandem，span，低32bit表示query minimizer在read上的位置。
  *
- *          关于正反链多说一句，如果x的最高位是1，那么就表示：将read反向互补后，比对到正向ref的某位置。
+ *          关于正反链多说一句，如果x的最高位是1，那么就表示：将kmer反向互补后，比对到正向ref的某位置。
  * */
 static mm128_t *collect_seed_hits_heap(void *km, const mm_mapopt_t *opt, int max_occ, const mm_idx_t *mi, const char *qname, const mm128_v *mv, int qlen, int64_t *n_a, int *rep_len,
 								  int *n_mini_pos, uint64_t **mini_pos)
@@ -377,6 +379,21 @@ void mm_map_frag(const mm_idx_t *mi, int n_segs, const int *qlens, const char **
 	    a = collect_seed_hits_heap(b->km, opt, opt->mid_occ, mi, qname, &mv, qlen_sum, &n_a, &rep_len, &n_mini_pos, &mini_pos);
 	else
 	    a = collect_seed_hits(b->km, opt, opt->mid_occ, mi, qname, &mv, qlen_sum, &n_a, &rep_len, &n_mini_pos, &mini_pos);
+
+    /************/
+    extern FILE* seed_files[PROFILE_THREAD_NUM];
+    char buf[128];
+
+    sprintf(buf, "%s\t%u\n", qname, qlen_sum);
+    fputs(buf, seed_files[pro_tid]);
+    for(i=0; i<n_a; i++){
+        u_int32_t span = (a[i].y >> 32) & 0xff;
+        u_int32_t pos = (u_int32_t)a[i].y;
+        sprintf(buf, "%u\t%u\n", span, pos);
+        fputs(buf, seed_files[pro_tid]);
+    }
+    fputc('\n', seed_files[pro_tid]);
+    /************/
 
 	if (mm_dbg_flag & MM_DBG_PRINT_SEED) {
 		fprintf(stderr, "RS\t%d\n", rep_len);
@@ -756,6 +773,29 @@ static mm_bseq_file_t **open_bseqs(int n, const char **fn)
  * */
 int mm_map_file_frag(const mm_idx_t *idx, int n_segs, const char **fn, const mm_mapopt_t *opt, int n_threads)
 {
+    /*******Add By WangTong*******/
+    const char *s = *fn;
+    char seed_path[128];
+    size_t k=0;
+    for(k = strlen(s)-1; k>=0; k--){
+        if(s[k] == '/') break;
+    }
+    char filename[32] = "seed_file_0.txt";
+    strncpy(seed_path, s, k+1);
+    seed_path[k+1] = '\0';
+    strcat(seed_path, filename);
+
+    extern FILE *seed_files[PROFILE_THREAD_NUM];
+    int ii;
+    for(ii = 0; ii < n_threads; ii++){
+
+        seed_path[strlen(seed_path) - 5] += 1;
+
+        fprintf(stderr, "seed profles %s\n", seed_path);
+        seed_files[ii] = fopen(seed_path, "w");
+    }
+    /*******Add By WangTong*******/
+
 	int i, pl_threads;
 	pipeline_t pl;
 	if (n_segs < 1) return -1;
@@ -776,6 +816,13 @@ int mm_map_file_frag(const mm_idx_t *idx, int n_segs, const char **fn, const mm_
 	for (i = 0; i < pl.n_fp; ++i)
 		mm_bseq_close(pl.fp[i]);
 	free(pl.fp);
+
+    /*******Add By WangTong*******/
+    for(ii=0; ii<n_threads; ii++){
+        fclose(seed_files[ii]);
+    }
+    /*******Add By WangTong*******/
+
 	return 0;
 }
 

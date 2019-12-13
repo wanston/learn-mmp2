@@ -12,12 +12,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7f57b0b1-56e6-4488-9d34-d2fe9c33aa3a" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/profile.h" beforeDir="false" afterPath="$PROJECT_DIR$/profile.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.c" beforeDir="false" afterPath="$PROJECT_DIR$/main.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/map.c" beforeDir="false" afterPath="$PROJECT_DIR$/map.c" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/cmake-build-debug/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
+    <option name="TRACKING_ENABLED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -117,11 +119,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="false">
+      <file leaf-file-name="main.c" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/main.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state>
-              <caret line="15" column="17" selection-start-line="15" selection-start-column="17" selection-end-line="15" selection-end-column="17" />
+            <state relative-caret-position="589">
+              <caret line="31" column="35" selection-start-line="31" selection-start-column="17" selection-end-line="31" selection-end-column="35" />
               <folding>
                 <element signature="e#0#19#0" expanded="true" />
                 <element signature="e#188#213#0" expanded="true" />
@@ -131,89 +133,78 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/README.md">
-          <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
-            <state split_layout="SPLIT">
-              <first_editor>
-                <caret column="12" selection-start-column="12" selection-end-column="12" />
-              </first_editor>
-              <second_editor />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
+      <file leaf-file-name="kthread.c" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/kthread.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="702">
-              <caret line="39" column="5" selection-start-line="39" selection-start-column="5" selection-end-line="39" selection-end-column="5" />
+            <state relative-caret-position="386">
+              <caret line="54" selection-start-line="54" selection-end-line="54" />
             </state>
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
+      <file leaf-file-name="map.c" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/map.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="7074">
-              <caret line="393" selection-start-line="393" selection-end-line="393" />
+            <state relative-caret-position="539">
+              <caret line="394" column="37" selection-start-line="394" selection-start-column="37" selection-end-line="394" selection-end-column="37" />
               <folding>
                 <element signature="e#0#19#0" expanded="true" />
+                <element signature="e#2456#2474#0" expanded="true" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/profile.h">
+      <file leaf-file-name="mmpriv.h" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/mmpriv.h">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="342">
-              <caret line="19" column="32" selection-start-line="19" selection-start-column="32" selection-end-line="19" selection-end-column="32" />
+            <state relative-caret-position="156">
+              <caret line="18" column="8" selection-start-line="18" selection-start-column="8" selection-end-line="18" selection-end-column="8" />
             </state>
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/khash.h">
+      <file leaf-file-name="sketch.c" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/sketch.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="8298">
-              <caret line="461" column="8" selection-start-line="461" selection-start-column="8" selection-end-line="461" selection-end-column="8" />
+            <state relative-caret-position="304">
+              <caret line="112" column="22" selection-start-line="112" selection-start-column="22" selection-end-line="112" selection-end-column="22" />
             </state>
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
+      <file leaf-file-name="align.c" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/align.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="14958">
+            <state relative-caret-position="665">
               <caret line="831" column="11" selection-start-line="831" selection-start-column="11" selection-end-line="831" selection-end-column="11" />
             </state>
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
+      <file leaf-file-name="chain.c" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/chain.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1134">
+            <state relative-caret-position="665">
               <caret line="63" selection-start-line="63" selection-end-line="63" />
             </state>
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
+      <file leaf-file-name="misc.c" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/misc.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1710">
+            <state relative-caret-position="1805">
               <caret line="95" column="7" selection-start-line="95" selection-start-column="7" selection-end-line="95" selection-end-column="7" />
             </state>
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
+      <file leaf-file-name="minimap.h" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/minimap.h">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="2988">
-              <caret line="166" column="26" selection-start-line="166" selection-start-column="14" selection-end-line="166" selection-end-column="26" />
+            <state relative-caret-position="395">
+              <caret line="147" column="2" selection-start-line="147" selection-start-column="2" selection-end-line="147" selection-end-column="2" />
             </state>
           </provider>
         </entry>
@@ -229,7 +220,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>mask</find>
       <find>aux</find>
       <find>sizeof_key</find>
       <find>sum_len</find>
@@ -259,6 +249,7 @@
       <find>p</find>
       <find>is_self</find>
       <find>worker_for</find>
+      <find>n_threads</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -283,10 +274,10 @@
         <option value="$PROJECT_DIR$/index.c" />
         <option value="$PROJECT_DIR$/sketch.c" />
         <option value="$PROJECT_DIR$/kthread.c" />
-        <option value="$PROJECT_DIR$/map.c" />
-        <option value="$PROJECT_DIR$/main.c" />
         <option value="$PROJECT_DIR$/profile.h" />
         <option value="$PROJECT_DIR$/README.md" />
+        <option value="$PROJECT_DIR$/main.c" />
+        <option value="$PROJECT_DIR$/map.c" />
       </list>
     </option>
   </component>
@@ -295,6 +286,9 @@
   <component name="JsGulpfileManager">
     <detection-done>true</detection-done>
     <sorting>DEFINITION_ORDER</sorting>
+  </component>
+  <component name="NodePackageJsonFileManager">
+    <packageJsonPaths />
   </component>
   <component name="OCFindUsagesOptions" text="false" ivars="false" properties="true" derivedClasses="false" />
   <component name="ProjectFrameBounds" extendedState="6">
@@ -314,7 +308,18 @@
           <expand>
             <path>
               <item name="minimap2" type="b2602c69:ProjectViewProjectNode" />
-              <item name="minimap2" type="462c0819:PsiDirectoryNode" />
+              <item name="learn-mmp2" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="minimap2" type="b2602c69:ProjectViewProjectNode" />
+              <item name="learn-mmp2" type="462c0819:PsiDirectoryNode" />
+              <item name="data" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="minimap2" type="b2602c69:ProjectViewProjectNode" />
+              <item name="learn-mmp2" type="462c0819:PsiDirectoryNode" />
+              <item name="data" type="462c0819:PsiDirectoryNode" />
+              <item name="test" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
@@ -330,7 +335,7 @@
     <property name="WebServerToolWindowPanel.toolwindow.show.date" value="false" />
     <property name="WebServerToolWindowPanel.toolwindow.show.permissions" value="false" />
     <property name="WebServerToolWindowPanel.toolwindow.show.size" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../minimap2 (2)" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
     <property name="settings.editor.selected.configurable" value="CPPToolchains" />
@@ -350,18 +355,9 @@
   <component name="RunManager" selected="Application.minimap2">
     <configuration name="" type="CLion_Remote" factoryName="GDB Remote Debug" debugger="" remoteCommand="" symbolFile="" sysroot="">
       <pathMapping remote=":$PROJECT_DIR$/../../../../cluster/Users/wt/minimap2" local="$PROJECT_DIR$" />
-      <method v="2" />
     </configuration>
-    <configuration name="Build All" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" CONFIG_NAME="Debug" EXPLICIT_BUILD_TARGET_NAME="all">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="minimap2" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="-ax sr ./data/test/test.mmi -t 10 ./data/test/test.fastq" WORKING_DIR="file://$PROJECT_DIR$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="minimap2" TARGET_NAME="minimap2" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="minimap2" RUN_TARGET_NAME="minimap2">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
+    <configuration name="Build All" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" CONFIG_NAME="Debug" EXPLICIT_BUILD_TARGET_NAME="all" />
+    <configuration name="minimap2" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="-ax sr ./data/test/test.mmi -t 1 ./data/test/test.fastq" WORKING_DIR="file://$PROJECT_DIR$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="minimap2" TARGET_NAME="minimap2" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="minimap2" RUN_TARGET_NAME="minimap2" />
     <list>
       <item itemvalue="Application.Build All" />
       <item itemvalue="Application.minimap2" />
@@ -411,11 +407,12 @@
       <workItem from="1574753040675" duration="96100000" />
       <workItem from="1575278473780" duration="52267000" />
       <workItem from="1575618954598" duration="407000" />
+      <workItem from="1576208379746" duration="4523000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="482177000" />
+    <option name="totallyTimeSpent" value="486700000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -430,52 +427,52 @@
     <frame x="1985" y="-4" width="1855" height="1084" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.8766328" visible="true" weight="0.1555433" />
-      <window_info id="Structure" order="1" sideWeight="0.1233672" side_tool="true" weight="0.16712631" />
-      <window_info id="Favorites" order="2" sideWeight="0.5015674" side_tool="true" weight="0.18036404" />
-      <window_info anchor="bottom" id="Message" order="0" />
-      <window_info anchor="bottom" id="Find" order="1" weight="0.15400624" />
-      <window_info anchor="bottom" id="Run" order="2" weight="0.27575442" />
-      <window_info anchor="bottom" id="Debug" order="3" weight="0.4037461" />
-      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
-      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
-      <window_info anchor="bottom" id="Database Changes" order="6" show_stripe_button="false" />
+      <window_info anchor="right" id="Remote Host" order="4" weight="0.24544953" />
+      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.8766328" visible="true" weight="0.15786548" />
       <window_info anchor="bottom" id="TODO" order="7" weight="0.3298647" />
-      <window_info anchor="bottom" id="Version Control" order="8" weight="0.3298647" />
-      <window_info anchor="bottom" id="Event Log" order="9" side_tool="true" />
-      <window_info anchor="bottom" id="Terminal" order="10" visible="true" weight="0.17793965" />
-      <window_info anchor="bottom" id="Messages" order="11" weight="0.3257024" />
+      <window_info anchor="bottom" id="Messages" order="11" weight="0.32470334" />
       <window_info anchor="bottom" id="CMake" order="12" weight="0.3298647" />
-      <window_info anchor="bottom" id="File Transfer" order="13" weight="0.1862643" />
+      <window_info anchor="bottom" id="Event Log" order="9" side_tool="true" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.27508092" />
+      <window_info anchor="bottom" id="Version Control" order="8" weight="0.3298647" />
+      <window_info id="Structure" order="1" sideWeight="0.1233672" side_tool="true" weight="0.16712631" />
+      <window_info anchor="bottom" id="Terminal" order="10" weight="0.17691478" />
+      <window_info active="true" anchor="bottom" id="Debug" order="3" visible="true" weight="0.24919094" />
+      <window_info id="Favorites" order="2" sideWeight="0.5015674" side_tool="true" weight="0.18036404" />
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
-      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
       <window_info anchor="right" id="Database" order="3" weight="0.32984003" />
-      <window_info anchor="right" id="Remote Host" order="4" weight="0.24544953" />
+      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Database Changes" order="6" show_stripe_button="false" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="bottom" id="File Transfer" order="13" weight="0.1862643" />
+      <window_info anchor="bottom" id="Find" order="1" weight="0.15400624" />
     </layout>
     <layout-to-restore>
+      <window_info anchor="bottom" id="CMake" order="12" weight="0.3298647" />
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
+      <window_info anchor="right" id="Remote Host" order="4" weight="0.24544953" />
       <window_info content_ui="combo" id="Project" order="0" sideWeight="0.8766328" visible="true" weight="0.15388858" />
       <window_info id="Structure" order="1" sideWeight="0.1233672" side_tool="true" weight="0.16712631" />
-      <window_info id="Favorites" order="2" sideWeight="0.5015674" side_tool="true" weight="0.18036404" />
-      <window_info anchor="bottom" id="Message" order="0" />
-      <window_info anchor="bottom" id="Find" order="1" weight="0.3496358" />
-      <window_info anchor="bottom" id="Run" order="2" weight="0.36212277" />
-      <window_info active="true" anchor="bottom" id="Debug" order="3" visible="true" weight="0.35379812" />
-      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
-      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
-      <window_info anchor="bottom" id="Database Changes" order="6" show_stripe_button="false" />
-      <window_info anchor="bottom" id="TODO" order="7" weight="0.3298647" />
-      <window_info anchor="bottom" id="Version Control" order="8" weight="0.3298647" />
-      <window_info anchor="bottom" id="Event Log" order="9" side_tool="true" />
-      <window_info anchor="bottom" id="Terminal" order="10" weight="0.23204994" />
-      <window_info anchor="bottom" id="Messages" order="11" weight="0.3257024" />
-      <window_info anchor="bottom" id="CMake" order="12" weight="0.3298647" />
-      <window_info anchor="bottom" id="File Transfer" order="13" weight="0.1862643" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
-      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
-      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+      <window_info anchor="bottom" id="TODO" order="7" weight="0.3298647" />
+      <window_info anchor="bottom" id="Database Changes" order="6" show_stripe_button="false" />
+      <window_info anchor="bottom" id="Version Control" order="8" weight="0.3298647" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.36212277" />
+      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info active="true" anchor="bottom" id="Debug" order="3" visible="true" weight="0.35379812" />
       <window_info anchor="right" id="Database" order="3" weight="0.32984003" />
-      <window_info anchor="right" id="Remote Host" order="4" weight="0.24544953" />
+      <window_info anchor="bottom" id="Terminal" order="10" weight="0.23204994" />
+      <window_info anchor="bottom" id="Event Log" order="9" side_tool="true" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="bottom" id="File Transfer" order="13" weight="0.1862643" />
+      <window_info anchor="bottom" id="Find" order="1" weight="0.3496358" />
+      <window_info anchor="bottom" id="Messages" order="11" weight="0.3257024" />
+      <window_info id="Favorites" order="2" sideWeight="0.5015674" side_tool="true" weight="0.18036404" />
     </layout-to-restore>
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -519,19 +516,62 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
           <url>file://$PROJECT_DIR$/map.c</url>
-          <line>571</line>
-          <option name="timeStamp" value="203" />
+          <line>397</line>
+          <option name="timeStamp" value="1" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
           <url>file://$PROJECT_DIR$/map.c</url>
-          <line>560</line>
-          <option name="timeStamp" value="204" />
+          <line>377</line>
+          <option name="timeStamp" value="4" />
         </line-breakpoint>
       </breakpoints>
+      <option name="time" value="5" />
     </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/.travis.yml">
+    <entry file="file://$PROJECT_DIR$/profile.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="361">
+          <caret line="19" column="32" selection-start-line="19" selection-start-column="32" selection-end-line="19" selection-end-column="32" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/khash.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="8759">
+          <caret line="461" column="8" selection-start-line="461" selection-start-column="8" selection-end-line="461" selection-end-column="8" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/align.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="15789">
+          <caret line="831" column="11" selection-start-line="831" selection-start-column="11" selection-end-line="831" selection-end-column="11" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/chain.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1197">
+          <caret line="63" selection-start-line="63" selection-end-line="63" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/misc.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1805">
+          <caret line="95" column="7" selection-start-line="95" selection-start-column="7" selection-end-line="95" selection-end-column="7" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/minimap.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="3154">
+          <caret line="166" column="26" selection-start-line="166" selection-start-column="14" selection-end-line="166" selection-end-column="26" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
       <provider selected="true" editor-type-id="text-editor" />
     </entry>
     <entry file="file://$PROJECT_DIR$/ksw2_dispatch.c">
@@ -548,20 +588,8 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/tmp/server.c">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="224">
-          <caret line="36" column="53" selection-start-line="36" selection-start-column="53" selection-end-line="36" selection-end-column="53" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/tmp/client.c">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="692">
-          <caret line="91" column="7" lean-forward="true" selection-start-line="91" selection-start-column="7" selection-end-line="91" selection-end-column="7" />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$USER_HOME$/tmp/server.c" />
+    <entry file="file://$USER_HOME$/tmp/client.c" />
     <entry file="file:///usr/include/x86_64-linux-gnu/sys/socket.h">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="284">
@@ -617,15 +645,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/ksw2_ll_sse.c">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/kalloc.h">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ketopt.h">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
     <entry file="file://$PROJECT_DIR$/kseq.h">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="3578">
@@ -640,19 +659,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/kthread.h">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/sdust.h">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
     <entry file="file://$PROJECT_DIR$/sdust.c">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-1026" />
       </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/pe.c">
-      <provider selected="true" editor-type-id="text-editor" />
     </entry>
     <entry file="file:///usr/include/pthread.h">
       <provider selected="true" editor-type-id="text-editor">
@@ -689,11 +699,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/data/sample.fastq">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-1080" />
-      </provider>
-    </entry>
+    <entry file="file://$PROJECT_DIR$/data/sample.fastq" />
     <entry file="file://$PROJECT_DIR$/data/test/test.fasta">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="126">
@@ -750,13 +756,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/mmpriv.h">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="216">
-          <caret line="12" column="8" selection-start-line="12" selection-start-column="8" selection-end-line="12" selection-end-column="8" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/hit.c">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="918">
@@ -771,24 +770,84 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/记录.txt">
+    <entry file="file://$PROJECT_DIR$/记录.txt" />
+    <entry file="file://$PROJECT_DIR$/index.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="36">
-          <caret line="2" selection-start-line="2" selection-end-line="2" selection-end-column="55" />
+        <state relative-caret-position="1566">
+          <caret line="87" column="16" selection-start-line="87" selection-start-column="16" selection-end-line="87" selection-end-column="16" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/profile.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="361">
+          <caret line="19" column="32" selection-start-line="19" selection-start-column="32" selection-end-line="19" selection-end-column="32" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/khash.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="8759">
+          <caret line="461" column="8" selection-start-line="461" selection-start-column="8" selection-end-line="461" selection-end-column="8" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/misc.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1805">
+          <caret line="95" column="7" selection-start-line="95" selection-start-column="7" selection-end-line="95" selection-end-column="7" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/kthread.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="386">
+          <caret line="54" selection-start-line="54" selection-end-line="54" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/mmpriv.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="156">
+          <caret line="18" column="8" selection-start-line="18" selection-start-column="8" selection-end-line="18" selection-end-column="8" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/minimap.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="395">
+          <caret line="147" column="2" selection-start-line="147" selection-start-column="2" selection-end-line="147" selection-end-column="2" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/sketch.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-664">
-          <caret line="76" column="5" selection-start-line="76" selection-start-column="5" selection-end-line="76" selection-end-column="5" />
+        <state relative-caret-position="304">
+          <caret line="112" column="22" selection-start-line="112" selection-start-column="22" selection-end-line="112" selection-end-column="22" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/align.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="665">
+          <caret line="831" column="11" selection-start-line="831" selection-start-column="11" selection-end-line="831" selection-end-column="11" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/chain.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="665">
+          <caret line="63" selection-start-line="63" selection-end-line="63" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/main.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state>
-          <caret line="15" column="17" selection-start-line="15" selection-start-column="17" selection-end-line="15" selection-end-column="17" />
+        <state relative-caret-position="589">
+          <caret line="31" column="35" selection-start-line="31" selection-start-column="17" selection-end-line="31" selection-end-column="35" />
           <folding>
             <element signature="e#0#19#0" expanded="true" />
             <element signature="e#188#213#0" expanded="true" />
@@ -797,79 +856,14 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/index.c">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1566">
-          <caret line="87" column="16" selection-start-line="87" selection-start-column="16" selection-end-line="87" selection-end-column="16" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/kthread.c">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="702">
-          <caret line="39" column="5" selection-start-line="39" selection-start-column="5" selection-end-line="39" selection-end-column="5" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/map.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="7074">
-          <caret line="393" selection-start-line="393" selection-end-line="393" />
+        <state relative-caret-position="539">
+          <caret line="394" column="37" selection-start-line="394" selection-start-column="37" selection-end-line="394" selection-end-column="37" />
           <folding>
             <element signature="e#0#19#0" expanded="true" />
+            <element signature="e#2456#2474#0" expanded="true" />
           </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/profile.h">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="342">
-          <caret line="19" column="32" selection-start-line="19" selection-start-column="32" selection-end-line="19" selection-end-column="32" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/khash.h">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="8298">
-          <caret line="461" column="8" selection-start-line="461" selection-start-column="8" selection-end-line="461" selection-end-column="8" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/align.c">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="14958">
-          <caret line="831" column="11" selection-start-line="831" selection-start-column="11" selection-end-line="831" selection-end-column="11" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/chain.c">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1134">
-          <caret line="63" selection-start-line="63" selection-end-line="63" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/misc.c">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1710">
-          <caret line="95" column="7" selection-start-line="95" selection-start-column="7" selection-end-line="95" selection-end-column="7" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/minimap.h">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2988">
-          <caret line="166" column="26" selection-start-line="166" selection-start-column="14" selection-end-line="166" selection-end-column="26" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/README.md">
-      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
-        <state split_layout="SPLIT">
-          <first_editor>
-            <caret column="12" selection-start-column="12" selection-end-column="12" />
-          </first_editor>
-          <second_editor />
         </state>
       </provider>
     </entry>

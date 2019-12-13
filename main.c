@@ -28,6 +28,8 @@ PROFILE_INIT0;
 PROFILE_INIT(seed);
 PROFILE_INIT(chain);
 PROFILE_INIT(extend);
+
+FILE* seed_files[PROFILE_THREAD_NUM];
 /*********************/
 
 static ko_longopt_t long_options[] = {
